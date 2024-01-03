@@ -18,11 +18,6 @@ public class Config {
 
     private static final Logger logger = Logger.getLogger("ThumbnailBot");
 
-    private String debugMode = "false";
-
-    private String redisAddress = "localhost";
-    private String redisPassword = "test";
-
     private String token = "none";
 
     private String rewardsAsJson = "[{\"id\": reward_1, \"minutesWithStatus\": 10, \"rewardDesc\": \"x1 **Nothing $-$**\"}," +

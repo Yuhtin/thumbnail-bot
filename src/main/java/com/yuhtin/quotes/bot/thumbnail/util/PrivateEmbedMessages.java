@@ -23,22 +23,6 @@ public class PrivateEmbedMessages {
         tryPrivateMessage(channel, recipient, 15, messages);
     }
 
-    public static void tryPrivateMessage(MessageChannel channel, Member recipient, Function<MessageCreateAction, MessageCreateAction> procedures, Consumer<Message> onSuccess, MessageEmbed... messages) {
-        tryPrivateMessage(channel, recipient, procedures, onSuccess, 15, messages);
-    }
-
-    public static void tryPrivateMessage(MessageChannel channel, User recipient, MessageEmbed... messages) {
-        tryPrivateMessage(channel, recipient, 15, messages);
-    }
-
-    public static void tryPrivateMessage(MessageChannel channel, User recipient, Function<MessageCreateAction, MessageCreateAction> procedures, MessageEmbed... messages) {
-        tryPrivateMessage(channel, recipient, procedures, null, 15, messages);
-    }
-
-    public static void tryPrivateMessage(MessageChannel channel, User recipient, Function<MessageCreateAction, MessageCreateAction> procedures, Consumer<Message> onSuccess, MessageEmbed... messages) {
-        tryPrivateMessage(channel, recipient, procedures, onSuccess, 15, messages);
-    }
-
     public static void tryPrivateMessage(MessageChannel channel, Member recipient, int delay, MessageEmbed... messages) {
         tryPrivateMessage(channel, recipient, null, null, delay, messages);
     }
@@ -51,24 +35,10 @@ public class PrivateEmbedMessages {
         });
     }
 
-    public static void tryPrivateMessage(MessageChannel channel, User recipient, int delay, MessageEmbed... messages) {
-        tryPrivateMessage(channel, recipient, null, null, delay, messages);
-    }
-
     public static void tryPrivateMessage(MessageChannel channel, User recipient, Function<MessageCreateAction, MessageCreateAction> procedures, Consumer<Message> onSuccess, int delay, MessageEmbed... messages) {
         recipient.openPrivateChannel().queue(pm -> sendMessages(channel, recipient, pm, procedures, onSuccess, null, messages, 0, delay), t -> {
             if (t instanceof net.dv8tion.jda.api.exceptions.ContextException)
                 t.printStackTrace();
-            timedMessagePrompt(channel, recipient, delay);
-        });
-    }
-
-    public static void tryPrivateMessage(MessageChannel channel, User recipient, Function<MessageCreateAction, MessageCreateAction> procedures, Consumer<Message> onSuccess, Runnable onFail, int delay, MessageEmbed... messages) {
-        recipient.openPrivateChannel().queue(pm -> sendMessages(channel, recipient, pm, procedures, onSuccess, onFail, messages, 0, delay), t -> {
-            if (t instanceof net.dv8tion.jda.api.exceptions.ContextException)
-                t.printStackTrace();
-            if (onFail != null)
-                onFail.run();
             timedMessagePrompt(channel, recipient, delay);
         });
     }
@@ -85,23 +55,6 @@ public class PrivateEmbedMessages {
                 return;
             }
             sendMessages(channel, recipient, pm, procedures, onSuccess, onFail, messages, index + 1, delay);
-        }, failure -> {
-            if (failure instanceof ContextException)
-                failure.printStackTrace();
-            if (onFail != null)
-                onFail.run();
-            timedMessagePrompt(channel, recipient, delay);
-        });
-    }
-
-    private static void sendEmbedMessages(MessageChannel channel, User recipient, PrivateChannel pm, Runnable onSuccess, Runnable onFail, MessageEmbed[] messages, int index, int delay) {
-        pm.sendMessageEmbeds(messages[index]).queue(success -> {
-            if (index + 1 >= messages.length) {
-                if (onSuccess != null)
-                    onSuccess.run();
-                return;
-            }
-            sendEmbedMessages(channel, recipient, pm, onSuccess, onFail, messages, index + 1, delay);
         }, failure -> {
             if (failure instanceof ContextException)
                 failure.printStackTrace();

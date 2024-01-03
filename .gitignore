@@ -4,6 +4,7 @@
 .idea/
 .gradle/
 *.db
+config.yml
 
 ### Java ###
 # Compiled class file
