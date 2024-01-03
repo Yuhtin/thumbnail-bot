@@ -28,9 +28,8 @@ public final class UserRepository {
         sqlExecutor.updateQuery("CREATE TABLE IF NOT EXISTS " + TABLE + "(" +
                 "userId LONG NOT NULL PRIMARY KEY," +
                 "receivedRewardsIds LONGTEXT NOT NULL," +
-                "statusSet BOOLEAN NOT NULL DEFAULT FALSE," +
-                "statusSetTimestamp LONG NOT NULL DEFAULT 0," +
-                "offlineStatusSetTimestamp LONG NOT NULL DEFAULT 0" +
+                "isStatusSet BOOLEAN NOT NULL DEFAULT FALSE," +
+                "statusSetInMillis LONG NOT NULL DEFAULT 0," +
                 ");"
         );
     }
@@ -65,13 +64,12 @@ public final class UserRepository {
 
     public void insert(StatusUser data) {
         this.sqlExecutor.updateQuery(
-                String.format("REPLACE INTO %s VALUES(?, ?, ?, ?, ?)", TABLE),
+                String.format("REPLACE INTO %s VALUES(?, ?, ?, ?)", TABLE),
                 statement -> {
                     statement.set(1, data.getUserId());
                     statement.set(2, String.join(",", data.getReceivedRewardsIds()));
                     statement.set(3, data.isStatusSet());
-                    statement.set(4, data.getStatusSetTimestamp());
-                    statement.set(5, data.getOfflineStatusSetTimestamp());
+                    statement.set(4, data.getStatusSetInMillis());
                 }
         );
     }

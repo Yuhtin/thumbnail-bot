@@ -5,15 +5,18 @@ import com.henryfabio.sqlprovider.executor.SQLExecutor;
 import com.yuhtin.quotes.bot.thumbnail.bot.DiscordBot;
 import com.yuhtin.quotes.bot.thumbnail.command.CommandRegistry;
 import com.yuhtin.quotes.bot.thumbnail.config.Config;
+import com.yuhtin.quotes.bot.thumbnail.manager.RewardsManager;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
 import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
+import com.yuhtin.quotes.bot.thumbnail.task.RewardsTask;
+import com.yuhtin.quotes.bot.thumbnail.util.TaskHelper;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.Guild;
 import redis.clients.jedis.Jedis;
 
 import java.io.File;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -32,7 +35,7 @@ public class ThumbnailBot implements DiscordBot {
     private Jedis jedis;
     private JDA jda;
 
-    private UserManager userManager;
+    private RewardsManager rewardsManager;
 
     public static ThumbnailBot getInstance() {
         return INSTANCE;
@@ -45,7 +48,6 @@ public class ThumbnailBot implements DiscordBot {
 
         loadConfig();
         setupSQL();
-        setupRedisClient();
 
         File projectRootPath = new File(System.getProperty("user.dir"));
 
@@ -71,7 +73,10 @@ public class ThumbnailBot implements DiscordBot {
 
         CommandRegistry.of(jda).register();
 
-        this.userManager = new UserManager(jda, config);
+        this.rewardsManager = new RewardsManager(this);
+
+        RewardsTask rewardsTask = new RewardsTask(this);
+        TaskHelper.runTaskTimerAsync(rewardsTask, 1, rewardsTask.getIntervalIn(TimeUnit.SECONDS), TimeUnit.SECONDS);
     }
 
     @Override
@@ -87,13 +92,6 @@ public class ThumbnailBot implements DiscordBot {
         }
 
         logger.info("Config loaded!");
-    }
-
-    private void setupRedisClient() {
-        //jedis = new Jedis(new HostAndPort(config.getRedisAddress(), 6379));
-        //jedis.auth(config.getRedisPassword());
-
-        logger.info("Redis client connected!");
     }
 
     private void setupSQL() {
@@ -134,8 +132,4 @@ public class ThumbnailBot implements DiscordBot {
         logger.addHandler(handler);
     }
 
-
-    public Guild getHomeGuild() {
-        return jda.getGuildById(config.getSobaServerId());
-    }
 }

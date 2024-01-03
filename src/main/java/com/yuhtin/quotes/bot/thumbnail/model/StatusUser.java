@@ -19,7 +19,6 @@ public class StatusUser {
     private List<String> receivedRewardsIds = new ArrayList<>();
 
     private boolean statusSet;
-
     private long statusSetInMillis;
 
 }

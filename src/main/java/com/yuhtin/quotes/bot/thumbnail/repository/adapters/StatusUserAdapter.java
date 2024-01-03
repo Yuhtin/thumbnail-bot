@@ -21,9 +21,8 @@ public class StatusUserAdapter implements SQLResultAdapter<StatusUser> {
         return new StatusUser(
                 resultSet.get("userId"),
                 receivedRewardsIds,
-                resultSet.get("statusSet"),
-                resultSet.get("statusSetTimestamp"),
-                resultSet.get("offlineStatusSetTimestamp")
+                resultSet.get("isStatusSet"),
+                resultSet.get("statusSetInMillis")
         );
     }
 

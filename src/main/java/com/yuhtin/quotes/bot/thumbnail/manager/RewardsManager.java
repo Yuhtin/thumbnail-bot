@@ -3,7 +3,6 @@ package com.yuhtin.quotes.bot.thumbnail.manager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.yuhtin.quotes.bot.thumbnail.ThumbnailBot;
-import com.yuhtin.quotes.bot.thumbnail.model.Manager;
 import com.yuhtin.quotes.bot.thumbnail.model.StatusReward;
 import com.yuhtin.quotes.bot.thumbnail.model.StatusUser;
 import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
@@ -38,17 +37,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Getter
-public class RewardsManager extends ListenerAdapter implements Manager {
+public class RewardsManager extends ListenerAdapter {
 
     private final ThumbnailBot bot;
     private LinkedHashMap<String, StatusReward> statusRewardMap;
 
     public RewardsManager(ThumbnailBot bot) {
         this.bot = bot;
-    }
 
-    @Override
-    public void initialize() {
         loadStatusRewards();
         updateRewardsMessage();
 
@@ -100,7 +96,7 @@ public class RewardsManager extends ListenerAdapter implements Manager {
                     embed.addField(
                             ":green_circle: **Success!**",
                             "You have just correctly set your status! At each milestone, you will receive a reward!\n" +
-                            "**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!", false
+                                    "**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!", false
                     );
 
                     PrivateEmbedMessages.tryPrivateMessage(null, member, embed.build());
@@ -185,12 +181,8 @@ public class RewardsManager extends ListenerAdapter implements Manager {
         return embed.build();
     }
 
-    public void sendRewardMessage(String username, String rewardId) {
-        StatusReward statusReward = statusRewardMap.get(rewardId);
-        if (statusReward != null) {
-            getRewardsChannel().sendMessage(":gift: **" + username + "** just received an reward: " + statusReward.getRewardDesc()).queue();
-        }
-
+    public void sendRewardMessage(long userId, StatusReward statusReward) {
+        getRewardsChannel().sendMessage(":gift: **<@" + userId + ">** just received an reward: " + statusReward.getRewardDesc()).queue();
         updateRewardsMessage();
     }
 
@@ -266,11 +258,5 @@ public class RewardsManager extends ListenerAdapter implements Manager {
             event.replyEmbeds(embed.build()).setEphemeral(true).queue();
         }
     }
-
-    @Override
-    public void shutdown() {
-
-    }
-
 
 }
