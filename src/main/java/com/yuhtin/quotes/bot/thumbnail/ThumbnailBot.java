@@ -5,16 +5,15 @@ import com.henryfabio.sqlprovider.executor.SQLExecutor;
 import com.yuhtin.quotes.bot.thumbnail.bot.DiscordBot;
 import com.yuhtin.quotes.bot.thumbnail.command.CommandRegistry;
 import com.yuhtin.quotes.bot.thumbnail.config.Config;
-import com.yuhtin.quotes.bot.thumbnail.manager.UserManager;
-import com.yuhtin.quotes.bot.thumbnail.model.Thumbnail;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
+import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
 import redis.clients.jedis.Jedis;
 
 import java.io.File;
 import java.util.Date;
-import java.util.UUID;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -112,6 +111,7 @@ public class ThumbnailBot implements DiscordBot {
         SQLExecutor executor = new SQLExecutor(new SQLiteDatabaseType(file).connect());
 
         ThumbnailRepository.instance().init(executor);
+        UserRepository.instance().init(executor);
     }
 
     private void formatLogger(Logger logger) {
@@ -135,4 +135,7 @@ public class ThumbnailBot implements DiscordBot {
     }
 
 
+    public Guild getHomeGuild() {
+        return jda.getGuildById(config.getSobaServerId());
+    }
 }

@@ -5,10 +5,17 @@ import com.google.gson.reflect.TypeToken;
 import com.yuhtin.quotes.bot.thumbnail.ThumbnailBot;
 import com.yuhtin.quotes.bot.thumbnail.model.Manager;
 import com.yuhtin.quotes.bot.thumbnail.model.StatusReward;
+import com.yuhtin.quotes.bot.thumbnail.model.StatusUser;
+import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
+import com.yuhtin.quotes.bot.thumbnail.util.BotEmbedBuilder;
+import com.yuhtin.quotes.bot.thumbnail.util.PrivateEmbedMessages;
+import com.yuhtin.quotes.bot.thumbnail.util.PrivateMessages;
 import lombok.Getter;
 import lombok.val;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -18,18 +25,17 @@ import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.dv8tion.jda.internal.utils.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.lang.reflect.Type;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 @Getter
 public class RewardsManager extends ListenerAdapter implements Manager {
@@ -47,39 +53,82 @@ public class RewardsManager extends ListenerAdapter implements Manager {
         updateRewardsMessage();
 
         bot.getJda().addEventListener(new ListenerAdapter() {
-
             @Override
             public void onUserUpdateActivities(@Nonnull UserUpdateActivitiesEvent event) {
                 if (event.getNewValue() == null || event.getNewValue().isEmpty()) {
-                    if (bot.getUserManager().isRegistered(mcPair.getLeft())) {
-                        bot.getUserManager().checkStatus(mcPair.getLeft(), null, event.getUser());
-                    }
+                    checkStatus(event.getMember(), null);
                 }
 
                 Activity statusActivity = null;
                 for (Activity activity : event.getNewValue()) {
-                    if (!activity.isRich() && activity.getType() == Activity.ActivityType.CUSTOM_STATUS) {
-                        if (bot.getUserManager().isRegistered(mcPair.getLeft())) {
-                            statusActivity = activity;
-                        } else {
-                            bot.getUserManager().syncUserData(mcPair.getLeft());
+                    if (!activity.isRich()
+                            && activity.getType() == Activity.ActivityType.CUSTOM_STATUS) {
+                        statusActivity = activity;
+
+                        if (activity.getName().contains("https://soba.xyz/")) {
+                            break;
                         }
                     }
                 }
 
                 if (statusActivity != null) {
-                    if (bot.getUserManager().isRegistered(mcPair.getLeft())) {
-                        bot.getUserManager().checkStatus(mcPair.getLeft(), statusActivity.getName(), event.getUser());
+                    checkStatus(event.getMember(), statusActivity.getName());
+                }
+            }
+        });
+    }
+
+    private void checkStatus(Member member, @Nullable String status) {
+        long memberIdLong = member.getIdLong();
+        StatusUser statusUser = UserRepository.instance().findByDiscordId(memberIdLong);
+
+        OnlineStatus onlineStatus = member.getOnlineStatus();
+        boolean canRateLimit = RateLimitManager.instance().tryUse(memberIdLong);
+        if (status != null && status.contains("https://soba.xyz/") && !statusUser.isStatusSet()) {
+            //new value correct
+            if (canRateLimit) {
+                if (OffsetDateTime.now().isBefore(member.getTimeCreated().plusDays(7))) {
+                    RateLimitManager.instance().increase(memberIdLong);
+                    PrivateMessages.tryPrivateMessage(null, member, "Your account must be at least 7 days from creation to be eligible");
+                    return;
+                }
+            }
+
+            if (canRateLimit) {
+                if (onlineStatus != OnlineStatus.INVISIBLE && onlineStatus != OnlineStatus.OFFLINE) {
+                    EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("Discord Status Streak", "Soba Discord Rewards");
+                    embed.addField(
+                            ":green_circle: **Success!**",
+                            "You have just correctly set your status! At each milestone, you will receive a reward!\n" +
+                            "**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!", false
+                    );
+
+                    PrivateEmbedMessages.tryPrivateMessage(null, member, embed.build());
+                    RateLimitManager.instance().increase(memberIdLong);
+                }
+            }
+
+            statusUser.setStatusSet(true);
+            UserRepository.instance().insert(statusUser);
+        } else {
+            if (statusUser.isStatusSet()) {
+                if (canRateLimit) {
+                    if (onlineStatus != OnlineStatus.INVISIBLE && onlineStatus != OnlineStatus.OFFLINE && (status == null || status.isEmpty())) {
+                        EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("Discord Status Streak", "Soba Discord Rewards");
+                        embed.setColor(Color.RED);
+                        embed.addField(":red_circle: **Caution!**", "Looks like you removed Soba status from your profile! You won't progress on your reward streak unless you add it again.", false);
+
+                        PrivateEmbedMessages.tryPrivateMessage(null, member, embed.build());
+
+                        RateLimitManager.instance().increase(memberIdLong);
                     }
                 }
 
-
+                statusUser.setStatusSet(false);
+                UserRepository.instance().insert(statusUser);
             }
-        });
-
-
+        }
     }
-
 
     public void loadStatusRewards() {
         statusRewardMap = new LinkedHashMap<>();
@@ -91,7 +140,6 @@ public class RewardsManager extends ListenerAdapter implements Manager {
 
         statusRewards.forEach(statusReward -> statusRewardMap.put(statusReward.getId(), statusReward));
     }
-
 
     public void updateRewardsMessage() {
         TextChannel rewardsChannel = getRewardsChannel();
@@ -105,16 +153,12 @@ public class RewardsManager extends ListenerAdapter implements Manager {
                     reward.delete().complete();
                 }
             }
-
         });
 
-        rewardsChannel.sendMessageEmbeds(getRewardsMessage(rewardsChannel.getGuild().getIconUrl()))
-                .setActionRow(
-                        Button.of(ButtonStyle.SUCCESS, "rewardsStatus", "Your rewards")
-                                .withEmoji(Emoji.fromUnicode("U+1F5D3")),
-                        Button.of(ButtonStyle.SECONDARY, "statusRewardInfo", "How to: Status Rewards")
-                                .withEmoji(Emoji.fromUnicode("U+1F4DD"))
-                ).complete();
+        rewardsChannel.sendMessageEmbeds(getRewardsMessage(rewardsChannel.getGuild().getIconUrl())).setActionRow(
+                Button.of(ButtonStyle.SUCCESS, "rewardsStatus", "Your rewards").withEmoji(Emoji.fromUnicode("U+1F5D3")),
+                Button.of(ButtonStyle.SECONDARY, "statusRewardInfo", "How to: Status Rewards").withEmoji(Emoji.fromUnicode("U+1F4DD"))
+        ).complete();
     }
 
     public TextChannel getRewardsChannel() {
@@ -141,83 +185,85 @@ public class RewardsManager extends ListenerAdapter implements Manager {
         return embed.build();
     }
 
-
     public void sendRewardMessage(String username, String rewardId) {
         StatusReward statusReward = statusRewardMap.get(rewardId);
         if (statusReward != null) {
-            getRewardsChannel().sendMessage(":gift: **" + username + "** just received an in-game reward: " + statusReward.getRewardDesc()).queue();
+            getRewardsChannel().sendMessage(":gift: **" + username + "** just received an reward: " + statusReward.getRewardDesc()).queue();
         }
 
         updateRewardsMessage();
     }
 
-
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
         if (event.getComponentId().equals("statusRewardInfo")) {
-
-            EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("**Discord Status Rewards** :gift:", "MineTr.ee Discord Rewards");
+            EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("**Discord Status Rewards** :gift:", "Soba Discord Rewards");
             embed.setColor(Color.CYAN);
-            embed.addField(":pencil: **HOW TO**", "Set your profile status as: \n-\n> " + DiscordUserCommon.CUSTOM_STATUS + "\n-\n and receive unique rewards for keeping your status unchanged!", false);
-            String rewards = "";
-            for (StatusReward statusReward : TreeDiscordBot.rewardsManager.statusRewardMap.values()) {
-                rewards += "> " + statusReward.getRewardDesc() + " (**" + statusReward.getHoursWithStatus() + "h** | _" + statusReward.getRealm() + "_)\n";
+            embed.addField(":pencil: **HOW TO**", "Set your profile status as: \n-\n> https://soba.xyz/\n-\n and receive unique rewards for keeping your status unchanged!", false);
 
-
+            StringBuilder rewards = new StringBuilder();
+            for (StatusReward statusReward : statusRewardMap.values()) {
+                rewards.append("> ")
+                        .append(statusReward.getRewardDesc())
+                        .append(" (**")
+                        .append(statusReward.getMinutesWithStatus())
+                        .append("m**)\n");
             }
-            rewards += "**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!";
-            embed.addField(":gift: **REWARDS**", rewards, false);
-            PrivateEmbedMessages.tryPrivateMessage(null, event.getUser(),
-                    embed.build());
 
-            event.reply("**<@" + event.getUser().getId() + ">, follow the instructions sent by the Bot on your private inbox!**").setEphemeral(true).queue();
+            rewards.append("**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!");
+            embed.addField(":gift: **REWARDS**", rewards.toString(), false);
 
+            //PrivateEmbedMessages.tryPrivateMessage(null, event.getUser(), embed.build());
+
+            //event.reply("**<@" + event.getUser().getId() + ">, follow the instructions sent by the Bot on your private inbox!**").setEphemeral(true).queue();
+            event.replyEmbeds(embed.build()).setEphemeral(true).queue();
         }
 
         if (event.getComponentId().equals("rewardsStatus")) {
-            Embed embed = BotEmbedBuilder.createDefaultEmbed("**MineTree Discord Rewards** :gift:", "MineTr.ee Discord Rewards");
+            EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("**Soba Discord Rewards** :gift:", "Soba Discord Rewards");
             embed.setColor(Color.CYAN);
             embed.addField(":small_red_triangle_down: **__YOUR STATUS__**", "\n", true);
-            Pair<UUID, String> userPair = TreeDiscordBot.syncManager.getLinkedMinecraftData(event.getUser().getId());
-            boolean isSynched = userPair != null;
-            boolean statusSet = false;
-            DiscordUser discordUser = null;
+
             String timeElapsed = "N/A";
-            int rewardsReceived = 0;
-            String rewards = "";
-            if (userPair != null) {
-                discordUser = TreeDiscordBot.botDiscordUserManager.discordUserMap.get(userPair.getLeft());
-                if (discordUser != null && discordUser.isStatusSet()) {
-                    statusSet = true;
-                    timeElapsed = String.valueOf(TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - discordUser.getStatusSetTimestamp())) + "h";
-                }
-                if (discordUser != null) {
-                    rewardsReceived = discordUser.getReceivedRewardsIds().stream().filter(received -> received.length() > 1).collect(Collectors.toList()).size();
+            boolean statusSet = false;
 
-                }
+            StatusUser discordUser = UserRepository.instance().findByDiscordId(event.getUser().getIdLong());
+            if (discordUser.isStatusSet()) {
+                statusSet = true;
+                timeElapsed = TimeUnit.MILLISECONDS.toHours(discordUser.getStatusSetInMillis()) + "h";
             }
 
-            for (StatusReward statusReward : TreeDiscordBot.rewardsManager.statusRewardMap.values()) {
-                if (discordUser != null && discordUser.getReceivedRewardsIds().contains(statusReward.getId())) {
-                    rewards += "> :white_check_mark: " + statusReward.getRewardDesc() + " (**" + statusReward.getHoursWithStatus() + "h** | _" + statusReward.getRealm() + "_)\n";
+            int rewardsReceived = discordUser.getReceivedRewardsIds().size();
+
+            StringBuilder rewards = new StringBuilder();
+            for (StatusReward statusReward : statusRewardMap.values()) {
+                rewards.append("> ");
+
+                if (discordUser.getReceivedRewardsIds().contains(statusReward.getId())) {
+                    rewards.append(":white_check_mark: ");
                 } else {
-                    rewards += "> :x: " + statusReward.getRewardDesc() + " (**" + statusReward.getHoursWithStatus() + "h** | _" + statusReward.getRealm() + "_)\n";
-
+                    rewards.append(":x: ");
                 }
-            }
-            rewards += "**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!";
-            embed.addField(":calendar: **Status Rewards**",
-                    "> Account Sync: " + (isSynched ? "Enabled" : "Disabled") + "\n" +
-                            "> Status Set: " + (statusSet ? "Yes" : "Pending") + "\n" +
-                            "> Time Elapsed: " + timeElapsed + "\n" +
-                            "> Rewards Received: " + rewardsReceived + "/" + BotSettings.REWARDS_HOURS.size() + "\n" +
-                            "> Rewards: \n" +
-                            rewards
-                    , false);
-            PrivateEmbedMessages.tryPrivateMessage(null, event.getUser(),
-                    embed.build());
 
-            event.reply("**<@" + event.getUser().getId() + ">, check your inbox!**").setEphemeral(true).queue();
+                rewards.append(statusReward.getRewardDesc())
+                        .append(" (**")
+                        .append(statusReward.getMinutesWithStatus())
+                        .append("m**)\n");
+            }
+
+            rewards.append("**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!");
+            embed.addField(":calendar: **Status Rewards**",
+                    "> Status Set: " + (statusSet ? "Yes" : "Pending") + "\n" +
+                            "> Time Elapsed: " + timeElapsed + "\n" +
+                            "> Rewards Received: " + rewardsReceived + "/" + statusRewardMap.size() + "\n" +
+                            "> Rewards: \n" +
+                            rewards,
+                    false);
+
+            //PrivateEmbedMessages.tryPrivateMessage(null, event.getUser(), embed.build());
+
+            //event.reply("**<@" + event.getUser().getId() + ">, check your inbox!**").setEphemeral(true).queue();
+            event.replyEmbeds(embed.build()).setEphemeral(true).queue();
         }
     }
 

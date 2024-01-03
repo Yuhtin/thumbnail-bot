@@ -37,6 +37,8 @@ public class Config {
 
     private long rewardsChannelId = 0L;
 
+    private long sobaServerId = 0L;
+
     public static Config loadConfig(String path) {
         try {
             File file = new File(path);
