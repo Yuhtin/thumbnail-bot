@@ -29,7 +29,7 @@ public final class UserRepository {
                 "userId LONG NOT NULL PRIMARY KEY," +
                 "receivedRewardsIds LONGTEXT NOT NULL," +
                 "isStatusSet BOOLEAN NOT NULL DEFAULT FALSE," +
-                "statusSetInMillis LONG NOT NULL DEFAULT 0," +
+                "statusSetInMillis LONG NOT NULL DEFAULT 0" +
                 ");"
         );
     }
