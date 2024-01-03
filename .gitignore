@@ -3,6 +3,7 @@
 
 .idea/
 .gradle/
+*.db
 
 ### Java ###
 # Compiled class file

@@ -139,6 +139,10 @@ public class RewardsManager extends ListenerAdapter {
 
     public void updateRewardsMessage() {
         TextChannel rewardsChannel = getRewardsChannel();
+        if (rewardsChannel == null) {
+            bot.getLogger().severe("Rewards channel not found!");
+            return;
+        }
 
         List<Message> rewardsMessages = rewardsChannel.getHistory().retrievePast(100).complete();
         rewardsMessages.forEach(reward -> {
@@ -157,6 +161,7 @@ public class RewardsManager extends ListenerAdapter {
         ).complete();
     }
 
+    @Nullable
     public TextChannel getRewardsChannel() {
         return bot.getJda().getTextChannelById(bot.getConfig().getRewardsChannelId());
     }
@@ -182,7 +187,13 @@ public class RewardsManager extends ListenerAdapter {
     }
 
     public void sendRewardMessage(long userId, StatusReward statusReward) {
-        getRewardsChannel().sendMessage(":gift: **<@" + userId + ">** just received an reward: " + statusReward.getRewardDesc()).queue();
+        TextChannel rewardsChannel = getRewardsChannel();
+        if (rewardsChannel == null) {
+            bot.getLogger().severe("Rewards channel not found!");
+            return;
+        }
+
+        rewardsChannel.sendMessage(":gift: **<@" + userId + ">** just received an reward: " + statusReward.getRewardDesc()).queue();
         updateRewardsMessage();
     }
 
