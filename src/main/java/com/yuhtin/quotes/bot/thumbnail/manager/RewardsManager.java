@@ -10,6 +10,7 @@ import com.yuhtin.quotes.bot.thumbnail.util.BotEmbedBuilder;
 import com.yuhtin.quotes.bot.thumbnail.util.PrivateEmbedMessages;
 import com.yuhtin.quotes.bot.thumbnail.util.PrivateMessages;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.val;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -22,6 +23,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import org.jetbrains.annotations.NotNull;
@@ -36,42 +38,43 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@NoArgsConstructor
 @Getter
 public class RewardsManager extends ListenerAdapter {
 
-    private final ThumbnailBot bot;
+    private static final RewardsManager INSTANCE = new RewardsManager();
+
+    private ThumbnailBot bot;
     private LinkedHashMap<String, StatusReward> statusRewardMap;
 
-    public RewardsManager(ThumbnailBot bot) {
-        this.bot = bot;
+    public void init() {
+        bot = ThumbnailBot.getInstance();
 
         loadStatusRewards();
         updateRewardsMessage();
+    }
 
-        bot.getJda().addEventListener(new ListenerAdapter() {
-            @Override
-            public void onUserUpdateActivities(@Nonnull UserUpdateActivitiesEvent event) {
-                if (event.getNewValue() == null || event.getNewValue().isEmpty()) {
-                    checkStatus(event.getMember(), null);
-                }
+    @SubscribeEvent
+    public void onUserUpdateActivities(@Nonnull UserUpdateActivitiesEvent event) {
+        if (event.getNewValue() == null || event.getNewValue().isEmpty()) {
+            checkStatus(event.getMember(), null);
+        }
 
-                Activity statusActivity = null;
-                for (Activity activity : event.getNewValue()) {
-                    if (!activity.isRich()
-                            && activity.getType() == Activity.ActivityType.CUSTOM_STATUS) {
-                        statusActivity = activity;
+        Activity statusActivity = null;
+        for (Activity activity : event.getNewValue()) {
+            if (!activity.isRich()
+                    && activity.getType() == Activity.ActivityType.CUSTOM_STATUS) {
+                statusActivity = activity;
 
-                        if (activity.getName().contains("https://soba.xyz/")) {
-                            break;
-                        }
-                    }
-                }
-
-                if (statusActivity != null) {
-                    checkStatus(event.getMember(), statusActivity.getName());
+                if (activity.getName().contains("https://soba.xyz/")) {
+                    break;
                 }
             }
-        });
+        }
+
+        if (statusActivity != null) {
+            checkStatus(event.getMember(), statusActivity.getName());
+        }
     }
 
     private void checkStatus(Member member, @Nullable String status) {
@@ -128,7 +131,7 @@ public class RewardsManager extends ListenerAdapter {
 
     public void loadStatusRewards() {
         statusRewardMap = new LinkedHashMap<>();
-        String rewardsAsJson = bot.getConfig().getRewardsAsJson();
+        String rewardsAsJson = ThumbnailBot.getInstance().getConfig().getRewardsAsJson();
 
         Type listType = new TypeToken<ArrayList<StatusReward>>() {
         }.getType();
@@ -140,7 +143,7 @@ public class RewardsManager extends ListenerAdapter {
     public void updateRewardsMessage() {
         TextChannel rewardsChannel = getRewardsChannel();
         if (rewardsChannel == null) {
-            bot.getLogger().severe("Rewards channel not found!");
+            ThumbnailBot.getInstance().getLogger().severe("Rewards channel not found!");
             return;
         }
 
@@ -155,7 +158,7 @@ public class RewardsManager extends ListenerAdapter {
             }
         });
 
-        rewardsChannel.sendMessageEmbeds(getRewardsMessage(rewardsChannel.getGuild().getIconUrl())).setActionRow(
+        rewardsChannel.sendMessageEmbeds(getRewardsMessage(ThumbnailBot.getInstance().getConfig().getSobaIconUrl())).setActionRow(
                 Button.of(ButtonStyle.SUCCESS, "rewardsStatus", "Your rewards").withEmoji(Emoji.fromUnicode("U+1F5D3")),
                 Button.of(ButtonStyle.SECONDARY, "statusRewardInfo", "How to: Status Rewards").withEmoji(Emoji.fromUnicode("U+1F4DD"))
         ).complete();
@@ -163,17 +166,17 @@ public class RewardsManager extends ListenerAdapter {
 
     @Nullable
     public TextChannel getRewardsChannel() {
-        return bot.getJda().getTextChannelById(bot.getConfig().getRewardsChannelId());
+        return ThumbnailBot.getInstance().getJda().getTextChannelById(ThumbnailBot.getInstance().getConfig().getRewardsChannelId());
     }
 
     public MessageEmbed getRewardsMessage(String serverIconUrl) {
         EmbedBuilder embed = new EmbedBuilder();
 
         int count = 0;
-        for (val rulesFields : bot.getConfig().getRewardsMessages().entrySet()) {
+        for (val rulesFields : ThumbnailBot.getInstance().getConfig().getRewardsMessages().entrySet()) {
             embed.addField(rulesFields.getKey(), rulesFields.getValue(), false);
             count++;
-            if (count < bot.getConfig().getRewardsMessages().size()) {
+            if (count < ThumbnailBot.getInstance().getConfig().getRewardsMessages().size()) {
                 embed.addBlankField(true);
             }
 
@@ -189,7 +192,7 @@ public class RewardsManager extends ListenerAdapter {
     public void sendRewardMessage(long userId, StatusReward statusReward) {
         TextChannel rewardsChannel = getRewardsChannel();
         if (rewardsChannel == null) {
-            bot.getLogger().severe("Rewards channel not found!");
+            ThumbnailBot.getInstance().getLogger().severe("Rewards channel not found!");
             return;
         }
 
@@ -268,6 +271,10 @@ public class RewardsManager extends ListenerAdapter {
             //event.reply("**<@" + event.getUser().getId() + ">, check your inbox!**").setEphemeral(true).queue();
             event.replyEmbeds(embed.build()).setEphemeral(true).queue();
         }
+    }
+
+    public static RewardsManager instance() {
+        return INSTANCE;
     }
 
 }

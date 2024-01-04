@@ -29,7 +29,7 @@ public final class UserRepository {
                 "userId LONG NOT NULL PRIMARY KEY," +
                 "receivedRewardsIds LONGTEXT NOT NULL," +
                 "isStatusSet BOOLEAN NOT NULL DEFAULT FALSE," +
-                "statusSetInMillis LONG NOT NULL DEFAULT 0" +
+                "statusSetInMillis LONGTEXT" +
                 ");"
         );
     }
@@ -69,7 +69,7 @@ public final class UserRepository {
                     statement.set(1, data.getUserId());
                     statement.set(2, String.join(",", data.getReceivedRewardsIds()));
                     statement.set(3, data.isStatusSet());
-                    statement.set(4, data.getStatusSetInMillis());
+                    statement.set(4, String.valueOf(data.getStatusSetInMillis()));
                 }
         );
     }

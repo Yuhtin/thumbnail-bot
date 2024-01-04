@@ -15,14 +15,21 @@ public class StatusUserAdapter implements SQLResultAdapter<StatusUser> {
 
     @Override
     public StatusUser adaptResult(SimpleResultSet resultSet) {
-        String[] rewardsIds = ((String) resultSet.get("receivedRewardsIds")).split(",");
-        List<String> receivedRewardsIds = new ArrayList<>(Arrays.asList(rewardsIds));
+        List<String> receivedRewardsIds = new ArrayList<>();
+        String string = resultSet.get("receivedRewardsIds");
+
+        if (string != null && !string.isEmpty()) {
+            String[] rewardsIds = string.split(",");
+            receivedRewardsIds.addAll(Arrays.asList(rewardsIds));
+        }
+
+        String statusSetInMillis = resultSet.get("statusSetInMillis");
 
         return new StatusUser(
                 resultSet.get("userId"),
                 receivedRewardsIds,
-                resultSet.get("isStatusSet"),
-                resultSet.get("statusSetInMillis")
+                (int) resultSet.get("isStatusSet") == 1,
+                Long.parseLong(statusSetInMillis)
         );
     }
 

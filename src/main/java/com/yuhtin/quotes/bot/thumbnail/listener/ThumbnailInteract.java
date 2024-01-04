@@ -30,7 +30,10 @@ public class ThumbnailInteract extends ListenerAdapter {
         for (LayoutComponent component : event.getMessage().getComponents()) {
             for (Button button : component.getButtons()) {
                 if (button.getId().equals(event.getButton().getId())) {
-                    editedComponents.add(button.asDisabled());
+                    editedComponents.add(button
+                            .withLabel(thumbnail.getName() + " (" + thumbnail.getVotes() + " 👍)")
+                            .asDisabled()
+                    );
                 } else {
                     editedComponents.add(Button.danger(button.getId(), button.getLabel()).asDisabled());
                 }

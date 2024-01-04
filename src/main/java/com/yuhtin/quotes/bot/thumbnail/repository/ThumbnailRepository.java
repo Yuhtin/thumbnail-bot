@@ -1,12 +1,13 @@
 package com.yuhtin.quotes.bot.thumbnail.repository;
 
 import com.henryfabio.sqlprovider.executor.SQLExecutor;
+import com.yuhtin.quotes.bot.thumbnail.ThumbnailBot;
 import com.yuhtin.quotes.bot.thumbnail.model.Thumbnail;
 import com.yuhtin.quotes.bot.thumbnail.repository.adapters.ThumbnailAdapter;
 import lombok.NoArgsConstructor;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 
-import java.util.Set;
+import java.io.File;
 
 /**
  * @author <a href="https://github.com/Yuhtin">Yuhtin</a>
@@ -19,6 +20,10 @@ public final class ThumbnailRepository {
     private static final String TABLE = "thumbnail_statistics";
 
     private SQLExecutor sqlExecutor;
+
+    public static ThumbnailRepository instance() {
+        return INSTANCE;
+    }
 
     public void init(SQLExecutor sqlExecutor) {
         this.sqlExecutor = sqlExecutor;
@@ -69,8 +74,15 @@ public final class ThumbnailRepository {
         );
     }
 
-    public static ThumbnailRepository instance() {
-        return INSTANCE;
-    }
+    public void loadThumbnail(File file) {
+        String name = file.getName().replace(".png", "").replace(".jpg", "");
+        ThumbnailBot.getInstance().getLogger().info("Loaded thumbnail " + name);
 
+        if (findById(name) != null) return;
+
+        Thumbnail thumbnail = new Thumbnail(name, name, file);
+        insert(thumbnail);
+
+        ThumbnailBot.getInstance().getLogger().info("Thumbnail " + name + " registered in database!");
+    }
 }

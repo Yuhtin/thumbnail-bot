@@ -1,6 +1,7 @@
 package com.yuhtin.quotes.bot.thumbnail.task;
 
 import com.yuhtin.quotes.bot.thumbnail.ThumbnailBot;
+import com.yuhtin.quotes.bot.thumbnail.manager.RewardsManager;
 import com.yuhtin.quotes.bot.thumbnail.model.StatusReward;
 import com.yuhtin.quotes.bot.thumbnail.model.StatusUser;
 import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
@@ -20,7 +21,7 @@ public class RewardsTask extends TimerTask {
 
     @Override
     public void run() {
-        for (StatusUser statusUser : UserRepository.instance().selectAll("WHERE statusSet = true")) {
+        for (StatusUser statusUser : UserRepository.instance().selectAll("WHERE isStatusSet = true")) {
             statusUser.setStatusSetInMillis(statusUser.getStatusSetInMillis() + TimeUnit.SECONDS.toMillis(TASK_INTERVAL_IN_SECONDS));
             testRewards(statusUser);
 
@@ -29,12 +30,12 @@ public class RewardsTask extends TimerTask {
     }
 
     private void testRewards(StatusUser statusUser) {
-        for (StatusReward reward : bot.getRewardsManager().getStatusRewardMap().values()) {
+        for (StatusReward reward : RewardsManager.instance().getStatusRewardMap().values()) {
             if (reward.getMinutesWithStatus() > TimeUnit.MILLISECONDS.toMinutes(statusUser.getStatusSetInMillis())) continue;
             if (statusUser.getReceivedRewardsIds().contains(reward.getId())) continue;
 
             statusUser.getReceivedRewardsIds().add(reward.getId());
-            bot.getRewardsManager().sendRewardMessage(statusUser.getUserId(), reward);
+            RewardsManager.instance().sendRewardMessage(statusUser.getUserId(), reward);
         }
     }
 

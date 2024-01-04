@@ -34,6 +34,8 @@ public class Config {
 
     private long sobaServerId = 0L;
 
+    private String sobaIconUrl = "https://cdn.discordapp.com/icons/844543952563863553/6c368627a8bac85d0b5e2d36a956925d.webp?size=96";
+
     public static Config loadConfig(String path) {
         try {
             File file = new File(path);

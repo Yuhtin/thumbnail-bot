@@ -12,7 +12,6 @@ import com.yuhtin.quotes.bot.thumbnail.task.RewardsTask;
 import com.yuhtin.quotes.bot.thumbnail.util.TaskHelper;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
-import redis.clients.jedis.Jedis;
 
 import java.io.File;
 import java.util.Date;
@@ -32,10 +31,7 @@ public class ThumbnailBot implements DiscordBot {
     private final Logger logger = Logger.getLogger("ThumbnailBot");
 
     private Config config;
-    private Jedis jedis;
     private JDA jda;
-
-    private RewardsManager rewardsManager;
 
     public static ThumbnailBot getInstance() {
         return INSTANCE;
@@ -49,19 +45,7 @@ public class ThumbnailBot implements DiscordBot {
         loadConfig();
         setupSQL();
 
-        File projectRootPath = new File(System.getProperty("user.dir"));
-
-        /*ThumbnailRepository.instance().insert(new Thumbnail(
-                UUID.randomUUID().toString(),
-                "The Droppers",
-                new File(projectRootPath, "/resources/1.png")
-        ));
-
-        ThumbnailRepository.instance().insert(new Thumbnail(
-                UUID.randomUUID().toString(),
-                "Run!",
-                new File(projectRootPath, "/resources/2.png")
-        ));*/
+        loadThumbnails();
 
         getLogger().info("Bot enabled!");
     }
@@ -73,7 +57,7 @@ public class ThumbnailBot implements DiscordBot {
 
         CommandRegistry.of(jda).register();
 
-        this.rewardsManager = new RewardsManager(this);
+        RewardsManager.instance().init();
 
         RewardsTask rewardsTask = new RewardsTask(this);
         TaskHelper.runTaskTimerAsync(rewardsTask, 1, rewardsTask.getIntervalIn(TimeUnit.SECONDS), TimeUnit.SECONDS);
@@ -92,6 +76,23 @@ public class ThumbnailBot implements DiscordBot {
         }
 
         logger.info("Config loaded!");
+    }
+
+    private void loadThumbnails() {
+        File projectRootPath = new File(System.getProperty("user.dir"));
+        File thumbnailsPath = new File(projectRootPath, "/thumbnails");
+
+        if (!thumbnailsPath.exists()) {
+            if (!thumbnailsPath.mkdirs()) {
+                throw new IllegalStateException("Couldn't create thumbnails folder!");
+            }
+        }
+
+        for (File file : thumbnailsPath.listFiles((dir, name) -> name.endsWith(".png") || name.endsWith(".jpg"))) {
+            ThumbnailRepository.instance().loadThumbnail(file);
+        }
+
+        logger.info("Thumbnails loaded!");
     }
 
     private void setupSQL() {
