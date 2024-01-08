@@ -68,7 +68,7 @@ public class ThumbnailBot implements DiscordBot {
         this.jda = jda;
     }
 
-    private void loadConfig() {
+    public void loadConfig() {
         config = Config.loadConfig("config.yml");
         if (config == null) {
             System.exit(0);
