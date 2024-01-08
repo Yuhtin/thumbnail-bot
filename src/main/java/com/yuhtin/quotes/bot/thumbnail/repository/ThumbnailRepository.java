@@ -75,7 +75,10 @@ public final class ThumbnailRepository {
     }
 
     public void loadThumbnail(File file) {
-        String name = file.getName().replace(".png", "").replace(".jpg", "");
+        String name = file.getName().replace(".png", "")
+                .replace(".jpg", "")
+                .replace(".jpeg", "");
+
         ThumbnailBot.getInstance().getLogger().info("Loaded thumbnail " + name);
 
         if (findById(name) != null) return;

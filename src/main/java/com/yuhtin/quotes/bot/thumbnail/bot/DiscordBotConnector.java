@@ -14,7 +14,7 @@ public class DiscordBotConnector {
         bot.onEnable();
 
         JDABuilder.createDefault(bot.getConfig().getToken())
-                .setEnabledIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES)
+                .setEnabledIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                 .disableCache(Arrays.asList(CacheFlag.values()))
                 .addEventListeners(new BotConnectionListener(bot), new ThumbnailInteract(), RewardsManager.instance())
                 .build();

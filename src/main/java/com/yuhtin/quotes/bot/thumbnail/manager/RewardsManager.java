@@ -3,6 +3,7 @@ package com.yuhtin.quotes.bot.thumbnail.manager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.yuhtin.quotes.bot.thumbnail.ThumbnailBot;
+import com.yuhtin.quotes.bot.thumbnail.config.Config;
 import com.yuhtin.quotes.bot.thumbnail.model.StatusReward;
 import com.yuhtin.quotes.bot.thumbnail.model.StatusUser;
 import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
@@ -81,28 +82,31 @@ public class RewardsManager extends ListenerAdapter {
         long memberIdLong = member.getIdLong();
         StatusUser statusUser = UserRepository.instance().findByDiscordId(memberIdLong);
 
+        Config config = ThumbnailBot.getInstance().getConfig();
+
         OnlineStatus onlineStatus = member.getOnlineStatus();
         boolean canRateLimit = RateLimitManager.instance().tryUse(memberIdLong);
+        EmbedBuilder defaultEmbed = BotEmbedBuilder.createDefaultEmbed(config.getDefaultEmbedTitle(), config.getDefaultEmbedFooter());
+
         if (status != null && status.contains("https://soba.xyz/") && !statusUser.isStatusSet()) {
             //new value correct
             if (canRateLimit) {
                 if (OffsetDateTime.now().isBefore(member.getTimeCreated().plusDays(7))) {
                     RateLimitManager.instance().increase(memberIdLong);
-                    PrivateMessages.tryPrivateMessage(null, member, "Your account must be at least 7 days from creation to be eligible");
+                    PrivateMessages.tryPrivateMessage(null, member, config.getNewAccountError());
                     return;
                 }
             }
 
             if (canRateLimit) {
                 if (onlineStatus != OnlineStatus.INVISIBLE && onlineStatus != OnlineStatus.OFFLINE) {
-                    EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("Discord Status Streak", "Soba Discord Rewards");
-                    embed.addField(
-                            ":green_circle: **Success!**",
-                            "You have just correctly set your status! At each milestone, you will receive a reward!\n" +
-                                    "**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!", false
+                    defaultEmbed.addField(
+                            config.getSetupSuccessFieldName(),
+                            config.getSetupSuccessFieldValue(),
+                            false
                     );
 
-                    PrivateEmbedMessages.tryPrivateMessage(null, member, embed.build());
+                    PrivateEmbedMessages.tryPrivateMessage(null, member, defaultEmbed.build());
                     RateLimitManager.instance().increase(memberIdLong);
                 }
             }
@@ -113,11 +117,14 @@ public class RewardsManager extends ListenerAdapter {
             if (statusUser.isStatusSet()) {
                 if (canRateLimit) {
                     if (onlineStatus != OnlineStatus.INVISIBLE && onlineStatus != OnlineStatus.OFFLINE && (status == null || status.isEmpty())) {
-                        EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("Discord Status Streak", "Soba Discord Rewards");
-                        embed.setColor(Color.RED);
-                        embed.addField(":red_circle: **Caution!**", "Looks like you removed Soba status from your profile! You won't progress on your reward streak unless you add it again.", false);
+                        defaultEmbed.setColor(Color.RED);
+                        defaultEmbed.addField(
+                                config.getSetupErrorFieldName(),
+                                config.getSetupErrorFieldValue(),
+                                false
+                        );
 
-                        PrivateEmbedMessages.tryPrivateMessage(null, member, embed.build());
+                        PrivateEmbedMessages.tryPrivateMessage(null, member, defaultEmbed.build());
 
                         RateLimitManager.instance().increase(memberIdLong);
                     }
@@ -158,9 +165,10 @@ public class RewardsManager extends ListenerAdapter {
             }
         });
 
-        rewardsChannel.sendMessageEmbeds(getRewardsMessage(ThumbnailBot.getInstance().getConfig().getSobaIconUrl())).setActionRow(
-                Button.of(ButtonStyle.SUCCESS, "rewardsStatus", "Your rewards").withEmoji(Emoji.fromUnicode("U+1F5D3")),
-                Button.of(ButtonStyle.SECONDARY, "statusRewardInfo", "How to: Status Rewards").withEmoji(Emoji.fromUnicode("U+1F4DD"))
+        Config config = ThumbnailBot.getInstance().getConfig();
+        rewardsChannel.sendMessageEmbeds(getRewardsMessage(config.getSobaIconUrl())).setActionRow(
+                Button.of(ButtonStyle.SUCCESS, "rewardsStatus", config.getLookPlayerRewardsButton()).withEmoji(Emoji.fromUnicode("U+1F5D3")),
+                Button.of(ButtonStyle.SECONDARY, "statusRewardInfo", config.getLookStatusRewardsButton()).withEmoji(Emoji.fromUnicode("U+1F4DD"))
         ).complete();
     }
 
@@ -173,18 +181,19 @@ public class RewardsManager extends ListenerAdapter {
         EmbedBuilder embed = new EmbedBuilder();
 
         int count = 0;
-        for (val rulesFields : ThumbnailBot.getInstance().getConfig().getRewardsMessages().entrySet()) {
+        Config config = ThumbnailBot.getInstance().getConfig();
+        for (val rulesFields : config.getRewardsMessages().entrySet()) {
             embed.addField(rulesFields.getKey(), rulesFields.getValue(), false);
             count++;
-            if (count < ThumbnailBot.getInstance().getConfig().getRewardsMessages().size()) {
+            if (count < config.getRewardsMessages().size()) {
                 embed.addBlankField(true);
             }
 
         }
 
-        embed.setTitle("**Soba Discord Rewards** :gift:");
+        embed.setTitle(config.getAnnounceRewardsEmbedTitle());
         embed.setColor(new Color(242, 105, 92));
-        embed.setFooter("Soba Rewards", serverIconUrl);
+        embed.setFooter(config.getDefaultEmbedFooter(), serverIconUrl);
 
         return embed.build();
     }
@@ -196,16 +205,23 @@ public class RewardsManager extends ListenerAdapter {
             return;
         }
 
-        rewardsChannel.sendMessage(":gift: **<@" + userId + ">** just received an reward: " + statusReward.getRewardDesc()).queue();
+        Config config = ThumbnailBot.getInstance().getConfig();
+        rewardsChannel.sendMessage(config.getUserReceivedReward()
+                .replace("{user}", String.valueOf(userId))
+                .replace("{reward}", statusReward.getRewardDesc())
+        ).queue();
+
         updateRewardsMessage();
     }
 
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+        Config config = ThumbnailBot.getInstance().getConfig();
+        EmbedBuilder defaultEmbed = BotEmbedBuilder.createDefaultEmbed(config.getDefaultEmbedTitle(), config.getDefaultEmbedFooter());
+
         if (event.getComponentId().equals("statusRewardInfo")) {
-            EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("**Discord Status Rewards** :gift:", "Soba Discord Rewards");
-            embed.setColor(Color.CYAN);
-            embed.addField(":pencil: **HOW TO**", "Set your profile status as: \n-\n> https://soba.xyz/\n-\n and receive unique rewards for keeping your status unchanged!", false);
+            defaultEmbed.setColor(Color.CYAN);
+            defaultEmbed.addField(config.getHowToSetStatusFieldName(), config.getHowToSetStatusFieldValue(), false);
 
             StringBuilder rewards = new StringBuilder();
             for (StatusReward statusReward : statusRewardMap.values()) {
@@ -216,19 +232,15 @@ public class RewardsManager extends ListenerAdapter {
                         .append("m**)\n");
             }
 
-            rewards.append("**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!");
-            embed.addField(":gift: **REWARDS**", rewards.toString(), false);
+            rewards.append(config.getBeawareField());
+            defaultEmbed.addField(config.getRewardsFieldName(), rewards.toString(), false);
 
-            //PrivateEmbedMessages.tryPrivateMessage(null, event.getUser(), embed.build());
-
-            //event.reply("**<@" + event.getUser().getId() + ">, follow the instructions sent by the Bot on your private inbox!**").setEphemeral(true).queue();
-            event.replyEmbeds(embed.build()).setEphemeral(true).queue();
+            event.replyEmbeds(defaultEmbed.build()).setEphemeral(true).queue();
         }
 
         if (event.getComponentId().equals("rewardsStatus")) {
-            EmbedBuilder embed = BotEmbedBuilder.createDefaultEmbed("**Soba Discord Rewards** :gift:", "Soba Discord Rewards");
-            embed.setColor(Color.CYAN);
-            embed.addField(":small_red_triangle_down: **__YOUR STATUS__**", "\n", true);
+            defaultEmbed.setColor(Color.CYAN);
+            defaultEmbed.addField(config.getYourStatusFieldName(), config.getYourStatusFieldValue(), true);
 
             String timeElapsed = "N/A";
             boolean statusSet = false;
@@ -257,19 +269,17 @@ public class RewardsManager extends ListenerAdapter {
                         .append("m**)\n");
             }
 
-            rewards.append("**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!");
-            embed.addField(":calendar: **Status Rewards**",
-                    "> Status Set: " + (statusSet ? "Yes" : "Pending") + "\n" +
-                            "> Time Elapsed: " + timeElapsed + "\n" +
-                            "> Rewards Received: " + rewardsReceived + "/" + statusRewardMap.size() + "\n" +
-                            "> Rewards: \n" +
-                            rewards,
+            rewards.append(config.getBeawareField());
+            defaultEmbed.addField(config.getStatusRewardsFieldName(),
+                    config.getStatusRewardsFieldValue()
+                            .replace("{isStatusSet}", statusSet ? "Yes" : "Pending")
+                            .replace("{time}", timeElapsed)
+                            .replace("{rewardsReceived}", String.valueOf(rewardsReceived))
+                            .replace("{totalRewards}", String.valueOf(statusRewardMap.size()))
+                            .replace("{rewards}", rewards),
                     false);
 
-            //PrivateEmbedMessages.tryPrivateMessage(null, event.getUser(), embed.build());
-
-            //event.reply("**<@" + event.getUser().getId() + ">, check your inbox!**").setEphemeral(true).queue();
-            event.replyEmbeds(embed.build()).setEphemeral(true).queue();
+            event.replyEmbeds(defaultEmbed.build()).setEphemeral(true).queue();
         }
     }
 

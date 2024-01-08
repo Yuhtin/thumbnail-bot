@@ -14,6 +14,7 @@ import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
@@ -88,7 +89,17 @@ public class ThumbnailBot implements DiscordBot {
             }
         }
 
-        for (File file : thumbnailsPath.listFiles((dir, name) -> name.endsWith(".png") || name.endsWith(".jpg"))) {
+        FilenameFilter filenameFilter = (dir, name) -> name.endsWith(".png")
+                || name.endsWith(".jpg")
+                || name.endsWith(".jpeg");
+
+        File[] files = thumbnailsPath.listFiles(filenameFilter);
+        if (files == null) {
+            logger.severe("Couldn't load thumbnails!");
+            return;
+        }
+
+        for (File file : files) {
             ThumbnailRepository.instance().loadThumbnail(file);
         }
 

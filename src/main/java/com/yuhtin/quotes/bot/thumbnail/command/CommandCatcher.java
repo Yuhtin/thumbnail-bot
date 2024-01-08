@@ -20,6 +20,8 @@ public final class CommandCatcher extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         Command command = commandMap.getCommands().get(event.getName());
+        if (command == null) return;
+
         try {
             command.execute(event);
         } catch (Exception exception) {

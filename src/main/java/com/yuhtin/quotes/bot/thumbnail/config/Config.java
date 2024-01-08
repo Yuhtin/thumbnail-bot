@@ -5,8 +5,6 @@ import com.yuhtin.quotes.bot.thumbnail.util.Serializer;
 import lombok.Getter;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -16,7 +14,7 @@ import java.util.logging.Logger;
 @Getter
 public class Config {
 
-    private static final Logger logger = Logger.getLogger("ThumbnailBot");
+    private static final Logger LOGGER = Logger.getLogger("ThumbnailBot");
 
     private String token = "none";
 
@@ -36,6 +34,45 @@ public class Config {
 
     private String sobaIconUrl = "https://cdn.discordapp.com/icons/844543952563863553/6c368627a8bac85d0b5e2d36a956925d.webp?size=96";
 
+    private String thumbnailEmbedTitle = "Thumbnail battle!";
+    private String thumbnailEmbedDescription = "Vote on the best thumbnail bellow or check the thumbnail rank by using /trank\n";
+
+    private String newAccountError = "Your account must be at least 7 days from creation to be eligible";
+
+    private String announceRewardsEmbedTitle = "**Soba Discord Rewards** :gift:";
+
+    private String defaultEmbedTitle = "Discord Status Rewards";
+    private String defaultEmbedFooter = "Soba Discord Rewards";
+
+    private String setupSuccessFieldName = ":green_circle: **Success!**";
+    private String setupSuccessFieldValue = "You have just correctly set your status! At each milestone, you will receive a reward!\n" +
+            "**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!";
+
+    private String setupErrorFieldName = ":red_circle: **Caution!**";
+    private String setupErrorFieldValue = "Looks like you removed Soba status from your profile! You won't progress on your reward unless you add it again.";
+
+    private String lookPlayerRewardsButton = "Your rewards";
+    private String lookStatusRewardsButton = "How to: Status Rewards";
+
+    private String howToSetStatusFieldName = ":pencil: **HOW TO**";
+    private String howToSetStatusFieldValue = "Set your profile status as: \n-\n> https://soba.xyz/\n-\n and receive unique rewards for keeping your status unchanged!";
+
+    private String beawareField = "**BE AWARE**: If you __remove__ your status or stay offline/invisible, your progress will not count!";
+    private String rewardsFieldName = ":gift: **REWARDS**";
+
+    private String yourStatusFieldName = ":small_red_triangle_down: **__YOUR STATUS__**";
+    private String yourStatusFieldValue = "\n";
+
+    private String statusRewardsFieldName = ":calendar: **Status Rewards**";
+    private String statusRewardsFieldValue = "> Status Set: {isStatusSet}\n" +
+            "> Time Elapsed: {time}\n" +
+            "> Rewards Received: {rewardsReceived}/{totalRewards}\n" +
+            "> Rewards: \n" +
+            "{rewards}";
+
+
+    private String userReceivedReward = ":gift: **<@{user}>** just received an reward: {reward}";
+
     public static Config loadConfig(String path) {
         try {
             File file = new File(path);
@@ -50,8 +87,8 @@ public class Config {
                     writer.flush();
                 }
 
-                logger.severe("Config not found, creating a new config!");
-                logger.severe("Put a valid token in the bot's config");
+                LOGGER.severe("Config not found, creating a new config!");
+                LOGGER.severe("Put a valid token in the bot's config");
                 return null;
             }
 

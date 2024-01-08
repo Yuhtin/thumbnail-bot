@@ -1,10 +1,12 @@
 package com.yuhtin.quotes.bot.thumbnail.util;
 
+import com.yuhtin.quotes.bot.thumbnail.ThumbnailBot;
+import com.yuhtin.quotes.bot.thumbnail.config.Config;
 import com.yuhtin.quotes.bot.thumbnail.model.Thumbnail;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.commands.CommandInteraction;
-import net.dv8tion.jda.api.interactions.components.ComponentInteraction;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
@@ -33,7 +35,7 @@ public class ThumbnailGameGenerator {
         graphics.fillRect(0, 0, 1920, 1080);
         graphics.setColor(Color.WHITE);
         graphics.setFont(new Font("Arial", Font.BOLD, 100));
-        graphics.drawString("x", 935, 540);
+        graphics.drawString("x", 933, 540);
 
         try {
             Thumbnail thumbnail1 = pair.getLeft();
@@ -55,32 +57,29 @@ public class ThumbnailGameGenerator {
             ImageIO.write(bufferedImage, "jpeg", os);
             InputStream is = new ByteArrayInputStream(os.toByteArray());
 
+            Config config = ThumbnailBot.getInstance().getConfig();
+            MessageEmbed embed = new EmbedBuilder()
+                    .setTitle(config.getThumbnailEmbedTitle())
+                    .setColor(Color.RED)
+                    .setDescription(config.getThumbnailEmbedDescription())
+                    .setImage("attachment://thumbnail.jpeg")
+                    .build();
+
+            FileUpload fileUpload = FileUpload.fromData(is, "thumbnail.jpeg");
+
+            Button firstButton = Button.success(thumbnail1.getId(), thumbnail1.getName() + " (" + thumbnail1.getVotes() + " 👍)");
+            Button seccondButton = Button.success(thumbnail2.getId(), thumbnail2.getName() + " (" + thumbnail2.getVotes() + " 👍)");
+
             if (replyCallbackAction == null) {
-                edit.setEmbeds(new EmbedBuilder()
-                                .setTitle("Thumbnail battle!")
-                                .setColor(Color.RED)
-                                .setDescription("Vote on the best thumbnail bellow or check the thumbnail rank by using /trank\n")
-                                .setImage("attachment://thumbnail.png")
-                                .build()
-                        )
-                        .setFiles(FileUpload.fromData(is, "thumbnail.png"))
-                        .setActionRow(
-                                Button.success(thumbnail1.getId(), thumbnail1.getName() + " (" + thumbnail1.getVotes() + " 👍)"),
-                                Button.success(thumbnail2.getId(), thumbnail2.getName() + " (" + thumbnail2.getVotes() + " 👍)")
-                        ).queue();
+                edit.setEmbeds(embed)
+                        .setFiles(fileUpload)
+                        .setActionRow(firstButton, seccondButton)
+                        .queue();
             } else {
-                replyCallbackAction.setEmbeds(new EmbedBuilder()
-                                .setTitle("Thumbnail battle!")
-                                .setColor(Color.RED)
-                                .setDescription("Vote on the best thumbnail bellow or check the thumbnail rank by using /trank\n")
-                                .setImage("attachment://thumbnail.png")
-                                .build()
-                        )
-                        .setFiles(FileUpload.fromData(is, "thumbnail.png"))
-                        .setActionRow(
-                                Button.success(thumbnail1.getId(), thumbnail1.getName() + " (" + thumbnail1.getVotes() + " 👍)"),
-                                Button.success(thumbnail2.getId(), thumbnail2.getName() + " (" + thumbnail2.getVotes() + " 👍)")
-                        ).queue();
+                replyCallbackAction.setEmbeds(embed)
+                        .setFiles(fileUpload)
+                        .setActionRow(firstButton, seccondButton)
+                        .queue();
             }
         } catch (Exception exception) {
             exception.printStackTrace();
