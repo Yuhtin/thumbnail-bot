@@ -3,6 +3,7 @@ package com.yuhtin.quotes.bot.thumbnail.listener;
 import com.yuhtin.quotes.bot.thumbnail.model.Thumbnail;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
 import com.yuhtin.quotes.bot.thumbnail.util.ThumbnailGameGenerator;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -24,6 +25,14 @@ public class ThumbnailInteract extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+        Message.Interaction interaction = event.getMessage().getInteraction();
+        if (interaction == null) return;
+
+        if (interaction.getUser().getIdLong() != event.getUser().getIdLong()) {
+            event.reply("You can't vote in other people's buttons!").setEphemeral(true).queue();
+            return;
+        }
+
         Thumbnail thumbnail = ThumbnailRepository.instance().findById(event.getButton().getId());
         if (thumbnail == null) return;
 

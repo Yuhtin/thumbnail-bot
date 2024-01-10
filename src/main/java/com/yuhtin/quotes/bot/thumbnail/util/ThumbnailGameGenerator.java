@@ -24,18 +24,18 @@ import java.io.InputStream;
 public class ThumbnailGameGenerator {
 
     public static void generate(@Nullable CommandInteraction command, @Nullable MessageEditCallbackAction edit) {
-        ReplyCallbackAction replyCallbackAction = command == null ? null : command.deferReply(true);
+        ReplyCallbackAction replyCallbackAction = command == null ? null : command.deferReply();
 
         Pair<Thumbnail, Thumbnail> pair = ThumbnailRepository.instance().selectRandom();
 
-        BufferedImage bufferedImage = new BufferedImage(1600, 1200, BufferedImage.TYPE_INT_RGB);
+        BufferedImage bufferedImage = new BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = bufferedImage.createGraphics();
 
         graphics.setColor(new Color(34, 36, 38));
-        graphics.fillRect(0, 0, 1600, 1200);
+        graphics.fillRect(0, 0, 1920, 1080);
         graphics.setColor(Color.WHITE);
         graphics.setFont(new Font("Arial", Font.BOLD, 100));
-        graphics.drawString("x", 778, 600);
+        graphics.drawString("x", 933, 540);
 
         try {
             Thumbnail thumbnail1 = pair.getLeft();
@@ -47,11 +47,14 @@ public class ThumbnailGameGenerator {
             ThumbnailRepository.instance().insert(thumbnail1);
             ThumbnailRepository.instance().insert(thumbnail2);
 
-            BufferedImage file1 = ImageIO.read(thumbnail1.getFile());
-            BufferedImage file2 = ImageIO.read(thumbnail2.getFile());
+            BufferedImage bufferedImage1 = ImageIO.read(thumbnail1.getFile());
+            BufferedImage bufferedImage2 = ImageIO.read(thumbnail2.getFile());
 
-            graphics.drawImage(file1, 0, 0, 775, 1200, null);
-            graphics.drawImage(file2, 830, 0, 775, 1200, null);
+            BufferedImage file1 = cutCenter(bufferedImage1, 930, 1080);
+            BufferedImage file2 = cutCenter(bufferedImage2, 930, 1080);
+
+            graphics.drawImage(file1, 0, 0, 930, 1080, null);
+            graphics.drawImage(file2, 995, 0, 930, 1080, null);
 
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ImageIO.write(bufferedImage, "jpeg", os);
@@ -84,6 +87,19 @@ public class ThumbnailGameGenerator {
         } catch (Exception exception) {
             exception.printStackTrace();
         }
+    }
+
+    private static BufferedImage cutCenter(BufferedImage originalImage, int width, int height) {
+        int centerX = originalImage.getWidth() / 2;
+        int centerY = originalImage.getHeight() / 2;
+
+        int x = Math.max(0, centerX - (width / 2));
+        int y = Math.max(0, centerY - (height / 2));
+
+        int subimageWidth = Math.min(originalImage.getWidth() - x, width);
+        int subimageHeight = Math.min(originalImage.getHeight() - y, height);
+
+        return originalImage.getSubimage(x, y, subimageWidth, subimageHeight);
     }
 
 }
