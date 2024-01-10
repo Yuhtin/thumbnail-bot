@@ -28,14 +28,14 @@ public class ThumbnailGameGenerator {
 
         Pair<Thumbnail, Thumbnail> pair = ThumbnailRepository.instance().selectRandom();
 
-        BufferedImage bufferedImage = new BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB);
+        BufferedImage bufferedImage = new BufferedImage(1600, 1200, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = bufferedImage.createGraphics();
 
         graphics.setColor(new Color(34, 36, 38));
-        graphics.fillRect(0, 0, 1920, 1080);
+        graphics.fillRect(0, 0, 1600, 1200);
         graphics.setColor(Color.WHITE);
         graphics.setFont(new Font("Arial", Font.BOLD, 100));
-        graphics.drawString("x", 933, 540);
+        graphics.drawString("x", 778, 600);
 
         try {
             Thumbnail thumbnail1 = pair.getLeft();
@@ -50,8 +50,8 @@ public class ThumbnailGameGenerator {
             BufferedImage file1 = ImageIO.read(thumbnail1.getFile());
             BufferedImage file2 = ImageIO.read(thumbnail2.getFile());
 
-            graphics.drawImage(file1, 0, 0, 930, 1080, null);
-            graphics.drawImage(file2, 995, 0, 930, 1080, null);
+            graphics.drawImage(file1, 0, 0, 775, 1200, null);
+            graphics.drawImage(file2, 830, 0, 775, 1200, null);
 
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ImageIO.write(bufferedImage, "jpeg", os);

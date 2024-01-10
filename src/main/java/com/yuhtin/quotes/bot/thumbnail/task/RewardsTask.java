@@ -31,11 +31,11 @@ public class RewardsTask extends TimerTask {
 
     private void testRewards(StatusUser statusUser) {
         for (StatusReward reward : RewardsManager.instance().getStatusRewardMap().values()) {
-            if (reward.getMinutesWithStatus() > TimeUnit.MILLISECONDS.toMinutes(statusUser.getStatusSetInMillis())) continue;
+            if (TimeUnit.HOURS.toMillis(reward.getHoursWithStatus()) > statusUser.getStatusSetInMillis()) continue;
             if (statusUser.getReceivedRewardsIds().contains(reward.getId())) continue;
 
             statusUser.getReceivedRewardsIds().add(reward.getId());
-            RewardsManager.instance().sendRewardMessage(statusUser.getUserId(), reward);
+            RewardsManager.instance().giveReward(statusUser.getUserId(), reward);
         }
     }
 

@@ -15,10 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.val;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.OnlineStatus;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -32,6 +29,9 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -198,6 +198,29 @@ public class RewardsManager extends ListenerAdapter {
         return embed.build();
     }
 
+    public void giveReward(long userId, StatusReward statusReward) {
+        File projectRootPath = new File(System.getProperty("user.dir"));
+        File rewardFile = new File(projectRootPath, "received-rewards.json");
+        if (!rewardFile.exists()) {
+            try {
+                rewardFile.createNewFile();
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
+        }
+
+        User userById = bot.getJda().getUserById(userId);
+        if (userById != null) {
+            try (FileWriter writer = new FileWriter(rewardFile, true)) {
+                writer.write("User: @" + userById.getName() + " | User ID: " + userId + " | Reward: " + statusReward.getId() + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        sendRewardMessage(userId, statusReward);
+    }
+
     public void sendRewardMessage(long userId, StatusReward statusReward) {
         TextChannel rewardsChannel = getRewardsChannel();
         if (rewardsChannel == null) {
@@ -228,7 +251,7 @@ public class RewardsManager extends ListenerAdapter {
                 rewards.append("> ")
                         .append(statusReward.getRewardDesc())
                         .append(" (**")
-                        .append(statusReward.getMinutesWithStatus())
+                        .append(statusReward.getHoursWithStatus())
                         .append("m**)\n");
             }
 
@@ -265,7 +288,7 @@ public class RewardsManager extends ListenerAdapter {
 
                 rewards.append(statusReward.getRewardDesc())
                         .append(" (**")
-                        .append(statusReward.getMinutesWithStatus())
+                        .append(statusReward.getHoursWithStatus())
                         .append("m**)\n");
             }
 

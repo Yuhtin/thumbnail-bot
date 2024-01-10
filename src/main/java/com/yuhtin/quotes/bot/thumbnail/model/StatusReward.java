@@ -10,7 +10,7 @@ import lombok.ToString;
 public class StatusReward {
 
   public String id;
-  public int minutesWithStatus;
+  public int hoursWithStatus;
   public String rewardDesc;
 
 }

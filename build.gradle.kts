@@ -37,6 +37,12 @@ dependencies {
 
 }
 
+tasks {
+    compileJava {
+        options.encoding = "UTF-8"
+    }
+}
+
 tasks.withType<ShadowJar> {
     archiveClassifier.set("")
     archiveFileName.set("bot.jar")

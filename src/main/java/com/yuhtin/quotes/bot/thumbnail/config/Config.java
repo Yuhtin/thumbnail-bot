@@ -18,8 +18,8 @@ public class Config {
 
     private String token = "none";
 
-    private String rewardsAsJson = "[{\"id\": reward_1, \"minutesWithStatus\": 10, \"rewardDesc\": \"x1 **Nothing $-$**\"}," +
-            "{\"id\": reward_2, \"minutesWithStatus\": 20, \"rewardDesc\": \"x3 **Nothing $-$**\"}]";
+    private String rewardsAsJson = "[{\"id\": reward_1, \"hoursWithStatus\": 2, \"rewardDesc\": \"x1 **Nothing $-$**\"}," +
+            "{\"id\": reward_2, \"hoursWithStatus\": 4, \"rewardDesc\": \"x3 **Nothing $-$**\"}]";
 
     private Map<String, String> rewardsMessages = ImmutableMap.of(
             ":pencil: **Discord Status Rewards**",
