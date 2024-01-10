@@ -6,7 +6,9 @@ import com.yuhtin.quotes.bot.thumbnail.model.Thumbnail;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.CommandInteraction;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
@@ -28,14 +30,18 @@ public class ThumbnailGameGenerator {
 
         Pair<Thumbnail, Thumbnail> pair = ThumbnailRepository.instance().selectRandom();
 
-        BufferedImage bufferedImage = new BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB);
+        int imagesWidth = 1275;
+        int totalWidth = imagesWidth * 2 + 65;
+        int maxHeight = 960;
+
+        BufferedImage bufferedImage = new BufferedImage(totalWidth, maxHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = bufferedImage.createGraphics();
 
         graphics.setColor(new Color(34, 36, 38));
-        graphics.fillRect(0, 0, 1920, 1080);
+        graphics.fillRect(0, 0, totalWidth, maxHeight);
         graphics.setColor(Color.WHITE);
         graphics.setFont(new Font("Arial", Font.BOLD, 100));
-        graphics.drawString("x", 933, 540);
+        graphics.drawString("x", imagesWidth + 3, maxHeight / 2);
 
         try {
             Thumbnail thumbnail1 = pair.getLeft();
@@ -50,11 +56,11 @@ public class ThumbnailGameGenerator {
             BufferedImage bufferedImage1 = ImageIO.read(thumbnail1.getFile());
             BufferedImage bufferedImage2 = ImageIO.read(thumbnail2.getFile());
 
-            BufferedImage file1 = cutCenter(bufferedImage1, 930, 1080);
-            BufferedImage file2 = cutCenter(bufferedImage2, 930, 1080);
+            BufferedImage file1 = cutCenter(bufferedImage1, imagesWidth, maxHeight);
+            BufferedImage file2 = cutCenter(bufferedImage2, imagesWidth, maxHeight);
 
-            graphics.drawImage(file1, 0, 0, 930, 1080, null);
-            graphics.drawImage(file2, 995, 0, 930, 1080, null);
+            graphics.drawImage(file1, 0, 0, imagesWidth, maxHeight, null);
+            graphics.drawImage(file2, imagesWidth + 65, 0, imagesWidth, maxHeight, null);
 
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ImageIO.write(bufferedImage, "jpeg", os);
@@ -73,15 +79,17 @@ public class ThumbnailGameGenerator {
             Button firstButton = Button.success(thumbnail1.getId(), thumbnail1.getName() + " (" + thumbnail1.getVotes() + " 👍)");
             Button seccondButton = Button.success(thumbnail2.getId(), thumbnail2.getName() + " (" + thumbnail2.getVotes() + " 👍)");
 
+            Button skipButton = Button.secondary("skip", Emoji.fromUnicode("⏩"));
+
             if (replyCallbackAction == null) {
                 edit.setEmbeds(embed)
                         .setFiles(fileUpload)
-                        .setActionRow(firstButton, seccondButton)
+                        .setActionRow(firstButton, seccondButton, skipButton)
                         .queue();
             } else {
                 replyCallbackAction.setEmbeds(embed)
                         .setFiles(fileUpload)
-                        .setActionRow(firstButton, seccondButton)
+                        .setActionRow(firstButton, seccondButton, skipButton)
                         .queue();
             }
         } catch (Exception exception) {
