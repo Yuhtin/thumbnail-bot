@@ -9,8 +9,13 @@ import lombok.ToString;
 @ToString
 public class StatusReward {
 
-  public String id;
-  public int hoursWithStatus;
-  public String rewardDesc;
+    public String id;
+    public int hoursWithStatus;
+    public String rewardDesc;
+
+    public String getFormattedHours() {
+        if (hoursWithStatus % 24 == 0) return hoursWithStatus / 24 + "d";
+        return hoursWithStatus + "h";
+    }
 
 }

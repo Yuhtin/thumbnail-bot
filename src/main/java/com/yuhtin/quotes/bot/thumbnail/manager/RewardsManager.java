@@ -67,7 +67,7 @@ public class RewardsManager extends ListenerAdapter {
                     && activity.getType() == Activity.ActivityType.CUSTOM_STATUS) {
                 statusActivity = activity;
 
-                if (activity.getName().contains("https://soba.xyz/")) {
+                if (activity.getName().contains(bot.getConfig().getNeededStatus())) {
                     break;
                 }
             }
@@ -88,7 +88,7 @@ public class RewardsManager extends ListenerAdapter {
         boolean canRateLimit = RateLimitManager.instance().tryUse(memberIdLong);
         EmbedBuilder defaultEmbed = BotEmbedBuilder.createDefaultEmbed(config.getDefaultEmbedTitle(), config.getDefaultEmbedFooter());
 
-        if (status != null && status.contains("https://soba.xyz/") && !statusUser.isStatusSet()) {
+        if (status != null && status.contains(config.getNeededStatus()) && !statusUser.isStatusSet()) {
             //new value correct
             if (canRateLimit) {
                 if (OffsetDateTime.now().isBefore(member.getTimeCreated().plusDays(7))) {
@@ -251,8 +251,8 @@ public class RewardsManager extends ListenerAdapter {
                 rewards.append("> ")
                         .append(statusReward.getRewardDesc())
                         .append(" (**")
-                        .append(statusReward.getHoursWithStatus())
-                        .append("m**)\n");
+                        .append(statusReward.getFormattedHours())
+                        .append("**)\n");
             }
 
             rewards.append(config.getBeawareField());
@@ -288,8 +288,8 @@ public class RewardsManager extends ListenerAdapter {
 
                 rewards.append(statusReward.getRewardDesc())
                         .append(" (**")
-                        .append(statusReward.getHoursWithStatus())
-                        .append("m**)\n");
+                        .append(statusReward.getFormattedHours())
+                        .append("**)\n");
             }
 
             rewards.append(config.getBeawareField());
