@@ -4,6 +4,7 @@ import com.yuhtin.quotes.bot.thumbnail.model.Game;
 import com.yuhtin.quotes.bot.thumbnail.util.ThumbnailGameGenerator;
 import lombok.val;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,13 +19,13 @@ public class ThumbnailInteractExpirationTask extends TimerTask {
 
         for (val entry : ThumbnailGameGenerator.getInteractionMap().entrySet()) {
             Game game = entry.getValue();
-            if (game.getInitialTime() + TimeUnit.SECONDS.toMillis(30) < System.currentTimeMillis()) continue;
+            if (game.getInitialTime() + TimeUnit.SECONDS.toMillis(30) > System.currentTimeMillis()) continue;
 
             EmbedBuilder embedBuilder = game.getEmbedBuilder();
             embedBuilder.setTitle("This battle already ended!");
 
             game.getHook().editOriginalEmbeds(embedBuilder.build())
-                    .setActionRow()
+                    .setComponents(new ArrayList<>())
                     .queue();
 
             toBeRemoved.add(entry.getKey());

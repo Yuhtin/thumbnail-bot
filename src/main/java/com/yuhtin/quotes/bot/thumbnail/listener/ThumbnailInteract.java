@@ -53,6 +53,7 @@ public class ThumbnailInteract extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         if (event.getChannel().getType() != ChannelType.TEXT) return;
+        if (event.getAuthor().getIdLong() == ThumbnailBot.getInstance().getJda().getSelfUser().getIdLong()) return;
 
         Config config = ThumbnailBot.getInstance().getConfig();
         if (event.getChannel().getIdLong() != config.getFixedMessageChannelId()) return;
@@ -63,12 +64,8 @@ public class ThumbnailInteract extends ListenerAdapter {
     public void updateFixedMessage(TextChannel channel) {
         List<Message> rewardsMessages = channel.getHistory().retrievePast(100).complete();
         rewardsMessages.forEach(message -> {
-            if (!message.getAuthor().isBot()) {
+            if (message.getAuthor().getIdLong() == channel.getJDA().getSelfUser().getIdLong()) {
                 message.delete().complete();
-            } else {
-                if (!message.getButtons().isEmpty()) {
-                    message.delete().complete();
-                }
             }
         });
 
