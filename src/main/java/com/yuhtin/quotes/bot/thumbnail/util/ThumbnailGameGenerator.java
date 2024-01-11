@@ -2,11 +2,16 @@ package com.yuhtin.quotes.bot.thumbnail.util;
 
 import com.yuhtin.quotes.bot.thumbnail.ThumbnailBot;
 import com.yuhtin.quotes.bot.thumbnail.config.Config;
+import com.yuhtin.quotes.bot.thumbnail.model.Game;
 import com.yuhtin.quotes.bot.thumbnail.model.Thumbnail;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.interactions.Interaction;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.CommandInteraction;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -22,8 +27,13 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class ThumbnailGameGenerator {
+
+    private static final Map<Long, Game> INTERACTION_MAP = new HashMap<>();
 
     public static void generate(@Nullable CommandInteraction command, @Nullable MessageEditCallbackAction edit) {
         ReplyCallbackAction replyCallbackAction = command == null ? null : command.deferReply();
@@ -85,12 +95,18 @@ public class ThumbnailGameGenerator {
                 edit.setEmbeds(embed)
                         .setFiles(fileUpload)
                         .setActionRow(firstButton, seccondButton, skipButton)
-                        .queue();
+                        .queue(hook ->
+                                INTERACTION_MAP.put(hook.getInteraction().getIdLong(),
+                                        new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis()))
+                        );
             } else {
                 replyCallbackAction.setEmbeds(embed)
                         .setFiles(fileUpload)
                         .setActionRow(firstButton, seccondButton, skipButton)
-                        .queue();
+                        .queue(hook ->
+                                INTERACTION_MAP.put(hook.getInteraction().getIdLong(),
+                                        new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis()))
+                        );
             }
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -108,6 +124,11 @@ public class ThumbnailGameGenerator {
         int subimageHeight = Math.min(originalImage.getHeight() - y, height);
 
         return originalImage.getSubimage(x, y, subimageWidth, subimageHeight);
+    }
+
+
+    public static Map<Long, Game> getInteractionMap() {
+        return INTERACTION_MAP;
     }
 
 }

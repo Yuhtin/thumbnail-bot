@@ -9,6 +9,7 @@ import com.yuhtin.quotes.bot.thumbnail.manager.RewardsManager;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
 import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
 import com.yuhtin.quotes.bot.thumbnail.task.RewardsTask;
+import com.yuhtin.quotes.bot.thumbnail.task.ThumbnailInteractExpirationTask;
 import com.yuhtin.quotes.bot.thumbnail.util.TaskHelper;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
@@ -60,8 +61,11 @@ public class ThumbnailBot implements DiscordBot {
 
         RewardsManager.instance().init();
 
-        RewardsTask rewardsTask = new RewardsTask(this);
+        RewardsTask rewardsTask = new RewardsTask();
         TaskHelper.runTaskTimerAsync(rewardsTask, 1, rewardsTask.getIntervalIn(TimeUnit.SECONDS), TimeUnit.SECONDS);
+
+        ThumbnailInteractExpirationTask thumbnailTask = new ThumbnailInteractExpirationTask();
+        TaskHelper.runTaskTimerAsync(thumbnailTask, 500, 500, TimeUnit.MILLISECONDS);
     }
 
     @Override

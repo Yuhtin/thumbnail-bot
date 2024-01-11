@@ -33,6 +33,8 @@ public class ThumbnailInteract extends ListenerAdapter {
             return;
         }
 
+        ThumbnailGameGenerator.getInteractionMap().remove(interaction.getIdLong());
+
         String id = event.getButton().getId();
         if (id != null && id.equalsIgnoreCase("skip")) {
             ThumbnailGameGenerator.generate(null, event.deferEdit());
@@ -40,10 +42,10 @@ public class ThumbnailInteract extends ListenerAdapter {
         }
 
         Thumbnail thumbnail = ThumbnailRepository.instance().findById(id);
-        if (thumbnail == null) return;
-
-        thumbnail.setVotes(thumbnail.getVotes() + 1);
-        ThumbnailRepository.instance().insert(thumbnail);
+        if (thumbnail != null) {
+            thumbnail.setVotes(thumbnail.getVotes() + 1);
+            ThumbnailRepository.instance().insert(thumbnail);
+        }
 
         ThumbnailGameGenerator.generate(null, event.deferEdit());
     }

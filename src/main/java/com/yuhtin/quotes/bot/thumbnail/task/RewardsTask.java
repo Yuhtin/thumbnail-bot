@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 public class RewardsTask extends TimerTask {
 
     private static final int TASK_INTERVAL_IN_SECONDS = 5;
-    private final ThumbnailBot bot;
 
     @Override
     public void run() {
