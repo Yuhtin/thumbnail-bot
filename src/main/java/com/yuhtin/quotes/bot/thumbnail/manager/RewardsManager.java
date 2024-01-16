@@ -57,6 +57,7 @@ public class RewardsManager extends ListenerAdapter {
 
     @SubscribeEvent
     public void onUserUpdateActivities(@Nonnull UserUpdateActivitiesEvent event) {
+        System.out.println(event.getMember().getIdLong() + " updated activities");
         if (event.getNewValue() == null || event.getNewValue().isEmpty()) {
             checkStatus(event.getMember(), null);
         }
@@ -79,6 +80,7 @@ public class RewardsManager extends ListenerAdapter {
     }
 
     private void checkStatus(Member member, @Nullable String status) {
+        System.out.println(member.getIdLong() + ": " + status);
         long memberIdLong = member.getIdLong();
         StatusUser statusUser = UserRepository.instance().findByDiscordId(memberIdLong);
 

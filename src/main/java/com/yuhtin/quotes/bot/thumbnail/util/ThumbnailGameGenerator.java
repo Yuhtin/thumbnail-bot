@@ -5,15 +5,10 @@ import com.yuhtin.quotes.bot.thumbnail.config.Config;
 import com.yuhtin.quotes.bot.thumbnail.model.Game;
 import com.yuhtin.quotes.bot.thumbnail.model.Thumbnail;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.interactions.Interaction;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.CommandInteraction;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
@@ -29,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class ThumbnailGameGenerator {
 
@@ -97,7 +91,7 @@ public class ThumbnailGameGenerator {
                         .setActionRow(firstButton, seccondButton, skipButton)
                         .queue(hook ->
                                 INTERACTION_MAP.put(hook.getInteraction().getIdLong(),
-                                        new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis()))
+                                        new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis(), bufferedImage))
                         );
             } else {
                 replyCallbackAction.setEmbeds(embed)
@@ -105,7 +99,7 @@ public class ThumbnailGameGenerator {
                         .setActionRow(firstButton, seccondButton, skipButton)
                         .queue(hook ->
                                 INTERACTION_MAP.put(hook.getInteraction().getIdLong(),
-                                        new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis()))
+                                        new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis(), bufferedImage))
                         );
             }
         } catch (Exception exception) {
