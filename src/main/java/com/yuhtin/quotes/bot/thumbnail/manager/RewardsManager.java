@@ -21,13 +21,11 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
@@ -48,6 +46,10 @@ public class RewardsManager extends ListenerAdapter {
     private ThumbnailBot bot;
     private LinkedHashMap<String, StatusReward> statusRewardMap;
 
+    public static RewardsManager instance() {
+        return INSTANCE;
+    }
+
     public void init() {
         bot = ThumbnailBot.getInstance();
 
@@ -55,32 +57,19 @@ public class RewardsManager extends ListenerAdapter {
         updateRewardsMessage();
     }
 
-    @SubscribeEvent
-    public void onUserUpdateActivities(@Nonnull UserUpdateActivitiesEvent event) {
-        System.out.println(event.getMember().getIdLong() + " updated activities");
-        if (event.getNewValue() == null || event.getNewValue().isEmpty()) {
-            checkStatus(event.getMember(), null);
-        }
-
-        Activity statusActivity = null;
-        for (Activity activity : event.getNewValue()) {
-            if (!activity.isRich()
-                    && activity.getType() == Activity.ActivityType.CUSTOM_STATUS) {
-                statusActivity = activity;
-
-                if (activity.getName().contains(bot.getConfig().getNeededStatus())) {
-                    break;
-                }
+    @Override
+    public void onUserUpdateActivities(@NotNull UserUpdateActivitiesEvent event) {
+        for (Activity activity : event.getMember().getActivities()) {
+            if (activity.getName().contains(bot.getConfig().getNeededStatus())) {
+                checkStatus(event.getMember(), activity.getName());
+                return;
             }
         }
 
-        if (statusActivity != null) {
-            checkStatus(event.getMember(), statusActivity.getName());
-        }
+        checkStatus(event.getMember(), null);
     }
 
     private void checkStatus(Member member, @Nullable String status) {
-        System.out.println(member.getIdLong() + ": " + status);
         long memberIdLong = member.getIdLong();
         StatusUser statusUser = UserRepository.instance().findByDiscordId(memberIdLong);
 
@@ -306,10 +295,6 @@ public class RewardsManager extends ListenerAdapter {
 
             event.replyEmbeds(defaultEmbed.build()).setEphemeral(true).queue();
         }
-    }
-
-    public static RewardsManager instance() {
-        return INSTANCE;
     }
 
 }
