@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class ThumbnailGameGenerator {
 
@@ -47,63 +48,84 @@ public class ThumbnailGameGenerator {
         graphics.setFont(new Font("Arial", Font.BOLD, 100));
         graphics.drawString("x", imagesWidth + 3, maxHeight / 2);
 
+        Thumbnail thumbnail1 = pair.getLeft();
+        Thumbnail thumbnail2 = pair.getRight();
+
+        thumbnail1.setViews(thumbnail1.getViews() + 1);
+        thumbnail2.setViews(thumbnail2.getViews() + 1);
+
+        ThumbnailRepository.instance().insert(thumbnail1);
+        ThumbnailRepository.instance().insert(thumbnail2);
+
+        BufferedImage bufferedImage1;
+        BufferedImage bufferedImage2;
+
+        Logger logger = ThumbnailBot.getInstance().getLogger();
         try {
-            Thumbnail thumbnail1 = pair.getLeft();
-            Thumbnail thumbnail2 = pair.getRight();
-
-            thumbnail1.setViews(thumbnail1.getViews() + 1);
-            thumbnail2.setViews(thumbnail2.getViews() + 1);
-
-            ThumbnailRepository.instance().insert(thumbnail1);
-            ThumbnailRepository.instance().insert(thumbnail2);
-
-            BufferedImage bufferedImage1 = ImageIO.read(thumbnail1.getFile());
-            BufferedImage bufferedImage2 = ImageIO.read(thumbnail2.getFile());
-
-            BufferedImage file1 = cutCenter(bufferedImage1, imagesWidth, maxHeight);
-            BufferedImage file2 = cutCenter(bufferedImage2, imagesWidth, maxHeight);
-
-            graphics.drawImage(file1, 0, 0, imagesWidth, maxHeight, null);
-            graphics.drawImage(file2, imagesWidth + 65, 0, imagesWidth, maxHeight, null);
-
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            ImageIO.write(bufferedImage, "jpeg", os);
-            InputStream is = new ByteArrayInputStream(os.toByteArray());
-
-            Config config = ThumbnailBot.getInstance().getConfig();
-            MessageEmbed embed = new EmbedBuilder()
-                    .setTitle(config.getThumbnailEmbedTitle())
-                    .setColor(Color.RED)
-                    .setDescription(config.getThumbnailEmbedDescription())
-                    .setImage("attachment://thumbnail.jpeg")
-                    .build();
-
-            FileUpload fileUpload = FileUpload.fromData(is, "thumbnail.jpeg");
-
-            Button firstButton = Button.success(thumbnail1.getId(), thumbnail1.getName() + " (" + thumbnail1.getVotes() + " 👍)");
-            Button seccondButton = Button.success(thumbnail2.getId(), thumbnail2.getName() + " (" + thumbnail2.getVotes() + " 👍)");
-
-            Button skipButton = Button.secondary("skip", Emoji.fromUnicode("⏩"));
-
-            if (replyCallbackAction == null) {
-                edit.setEmbeds(embed)
-                        .setFiles(fileUpload)
-                        .setActionRow(firstButton, seccondButton, skipButton)
-                        .queue(hook ->
-                                INTERACTION_MAP.put(hook.getInteraction().getIdLong(),
-                                        new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis(), bufferedImage))
-                        );
-            } else {
-                replyCallbackAction.setEmbeds(embed)
-                        .setFiles(fileUpload)
-                        .setActionRow(firstButton, seccondButton, skipButton)
-                        .queue(hook ->
-                                INTERACTION_MAP.put(hook.getInteraction().getIdLong(),
-                                        new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis(), bufferedImage))
-                        );
-            }
+            bufferedImage1 = ImageIO.read(thumbnail1.getFile());
         } catch (Exception exception) {
-            exception.printStackTrace();
+            logger.severe("Error while reading image from " + thumbnail1.getFile().getName());
+            logger.severe("Error: " + exception.getMessage());
+            return;
+        }
+
+        try {
+            bufferedImage2 = ImageIO.read(thumbnail2.getFile());
+        } catch (Exception exception) {
+            logger.severe("Error while reading image from " + thumbnail2.getFile().getName());
+            logger.severe("Error: " + exception.getMessage());
+            return;
+        }
+
+        BufferedImage file1 = cutCenter(bufferedImage1, imagesWidth, maxHeight);
+        BufferedImage file2 = cutCenter(bufferedImage2, imagesWidth, maxHeight);
+
+        graphics.drawImage(file1, 0, 0, imagesWidth, maxHeight, null);
+        graphics.drawImage(file2, imagesWidth + 65, 0, imagesWidth, maxHeight, null);
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        try {
+            ImageIO.write(bufferedImage, "jpeg", os);
+        } catch (Exception exception) {
+            logger.severe("Error while writing image to ByteArrayOutputStream");
+            logger.severe("Error: " + exception.getMessage());
+            return;
+        }
+
+        InputStream is = new ByteArrayInputStream(os.toByteArray());
+
+        Config config = ThumbnailBot.getInstance().getConfig();
+        MessageEmbed embed = new EmbedBuilder()
+                .setTitle(config.getThumbnailEmbedTitle())
+                .setColor(Color.RED)
+                .setDescription(config.getThumbnailEmbedDescription())
+                .setImage("attachment://thumbnail.jpeg")
+                .build();
+
+        FileUpload fileUpload = FileUpload.fromData(is, "thumbnail.jpeg");
+
+        Button firstButton = Button.success(thumbnail1.getId(), thumbnail1.getName() + " (" + thumbnail1.getVotes() + " 👍)");
+        Button seccondButton = Button.success(thumbnail2.getId(), thumbnail2.getName() + " (" + thumbnail2.getVotes() + " 👍)");
+
+        Button skipButton = Button.secondary("skip", Emoji.fromUnicode("⏩"));
+
+        if (replyCallbackAction == null) {
+            edit.setEmbeds(embed)
+                    .setFiles(fileUpload)
+                    .setActionRow(firstButton, seccondButton, skipButton)
+                    .queue(hook ->
+                            INTERACTION_MAP.put(hook.getInteraction().getIdLong(),
+                                    new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis(), bufferedImage))
+                    );
+        } else {
+            replyCallbackAction.setEmbeds(embed)
+                    .setFiles(fileUpload)
+                    .setActionRow(firstButton, seccondButton, skipButton)
+                    .queue(hook ->
+                            INTERACTION_MAP.put(hook.getInteraction().getIdLong(),
+                                    new Game(hook, new EmbedBuilder(embed), System.currentTimeMillis(), bufferedImage))
+                    );
         }
     }
 

@@ -24,9 +24,14 @@ public class TaskHelper {
         new Thread(() -> timer.schedule(task, timeFormat.toMillis(time))).start();
     }
 
-    public static void runTaskLaterAsync(TimerTask task, int time, TimeUnit timeFormat) {
+    public static void runTaskLaterAsync(Runnable task, int time, TimeUnit timeFormat) {
         Timer timer = new Timer();
-        runAsync(new Thread(() -> timer.schedule(task, timeFormat.toMillis(time))));
+        runAsync(new Thread(() -> timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                task.run();
+            }
+        }, timeFormat.toMillis(time))));
     }
 
     public static void runAsync(Runnable runnable) { executor.execute(runnable); }

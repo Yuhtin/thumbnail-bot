@@ -10,6 +10,7 @@ import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
 import com.yuhtin.quotes.bot.thumbnail.util.BotEmbedBuilder;
 import com.yuhtin.quotes.bot.thumbnail.util.PrivateEmbedMessages;
 import com.yuhtin.quotes.bot.thumbnail.util.PrivateMessages;
+import com.yuhtin.quotes.bot.thumbnail.util.TaskHelper;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.val;
@@ -59,14 +60,18 @@ public class RewardsManager extends ListenerAdapter {
 
     @Override
     public void onUserUpdateActivities(@NotNull UserUpdateActivitiesEvent event) {
-        for (Activity activity : event.getMember().getActivities()) {
-            if (activity.getName().contains(bot.getConfig().getNeededStatus())) {
-                checkStatus(event.getMember(), activity.getName());
-                return;
-            }
-        }
+        boolean isConfigLoaded = bot.getConfig() != null;
 
-        checkStatus(event.getMember(), null);
+        TaskHelper.runTaskLaterAsync(() -> {
+            for (Activity activity : event.getMember().getActivities()) {
+                if (activity.getName().contains(bot.getConfig().getNeededStatus())) {
+                    checkStatus(event.getMember(), activity.getName());
+                    return;
+                }
+            }
+
+            checkStatus(event.getMember(), null);
+        }, isConfigLoaded ? 0 : 5, TimeUnit.SECONDS);
     }
 
     private void checkStatus(Member member, @Nullable String status) {
@@ -183,6 +188,7 @@ public class RewardsManager extends ListenerAdapter {
         }
 
         embed.setTitle(config.getAnnounceRewardsEmbedTitle());
+        embed.setImage(config.getRewardsImageUrl());
         embed.setColor(new Color(242, 105, 92));
         embed.setFooter(config.getDefaultEmbedFooter(), serverIconUrl);
 
@@ -191,7 +197,7 @@ public class RewardsManager extends ListenerAdapter {
 
     public void giveReward(long userId, StatusReward statusReward) {
         File projectRootPath = new File(System.getProperty("user.dir"));
-        File rewardFile = new File(projectRootPath, "received-rewards.json");
+        File rewardFile = new File(projectRootPath, "received-rewards.txt");
         if (!rewardFile.exists()) {
             try {
                 rewardFile.createNewFile();

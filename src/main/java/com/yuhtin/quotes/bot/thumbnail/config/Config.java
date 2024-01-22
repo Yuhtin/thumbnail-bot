@@ -79,6 +79,8 @@ public class Config {
 
     private String userReceivedReward = ":gift: **<@{user}>** just received an reward: {reward}";
 
+    private String rewardsImageUrl = "https://i.imgur.com/Iae1SGf.png";
+
     public static Config loadConfig(String path) {
         try {
             File file = new File(path);
