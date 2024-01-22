@@ -25,10 +25,19 @@ public class StatusUserAdapter implements SQLResultAdapter<StatusUser> {
 
         String statusSetInMillis = resultSet.get("statusSetInMillis");
 
+        boolean isStatusSet = false;
+        try {
+            int statusSet = resultSet.get("isStatusSet");
+            isStatusSet = statusSet == 1;
+        } catch (Exception ignored) {
+            String isStatusSet1 = resultSet.get("isStatusSet");
+            isStatusSet = Boolean.parseBoolean(isStatusSet1);
+        }
+
         return new StatusUser(
                 resultSet.get("userId"),
                 receivedRewardsIds,
-                (int) resultSet.get("isStatusSet") == 1,
+                isStatusSet,
                 Long.parseLong(statusSetInMillis)
         );
     }

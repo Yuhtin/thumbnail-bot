@@ -60,7 +60,7 @@ public class RewardsManager extends ListenerAdapter {
 
     @Override
     public void onUserUpdateActivities(@NotNull UserUpdateActivitiesEvent event) {
-        boolean isConfigLoaded = bot.getConfig() != null;
+        boolean isConfigLoaded = bot != null && bot.getConfig() != null;
 
         TaskHelper.runTaskLaterAsync(() -> {
             for (Activity activity : event.getMember().getActivities()) {
