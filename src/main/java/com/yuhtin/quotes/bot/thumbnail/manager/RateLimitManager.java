@@ -38,7 +38,7 @@ public class RateLimitManager {
 
         if (newRateLimits.size() >= MAX_THRESHOLD) {
             USER_DELAY.remove(user);
-            USER_DELAY.put(user, System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(20));
+            USER_DELAY.put(user, System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
 
             newRateLimits.clear();
         }
