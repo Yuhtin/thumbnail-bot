@@ -85,7 +85,6 @@ public class RewardsManager extends ListenerAdapter {
         EmbedBuilder defaultEmbed = BotEmbedBuilder.createDefaultEmbed(config.getDefaultEmbedTitle(), config.getDefaultEmbedFooter());
 
         if (status != null && status.contains(config.getNeededStatus()) && !statusUser.isStatusSet()) {
-            //new value correct
             if (canRateLimit) {
                 if (OffsetDateTime.now().isBefore(member.getTimeCreated().plusDays(7))) {
                     RateLimitManager.instance().increase(memberIdLong);
@@ -95,7 +94,9 @@ public class RewardsManager extends ListenerAdapter {
             }
 
             if (canRateLimit) {
-                if (onlineStatus != OnlineStatus.INVISIBLE && onlineStatus != OnlineStatus.OFFLINE) {
+                if (!statusUser.isDisabledByGoingOffline()
+                        && onlineStatus != OnlineStatus.INVISIBLE
+                        && onlineStatus != OnlineStatus.OFFLINE) {
                     defaultEmbed.addField(
                             config.getSetupSuccessFieldName(),
                             config.getSetupSuccessFieldValue(),
@@ -107,28 +108,28 @@ public class RewardsManager extends ListenerAdapter {
                 }
             }
 
+            statusUser.setDisabledByGoingOffline(false);
             statusUser.setStatusSet(true);
             UserRepository.instance().insert(statusUser);
-        } else {
-            if (statusUser.isStatusSet()) {
-                if (canRateLimit) {
-                    if (onlineStatus != OnlineStatus.INVISIBLE && onlineStatus != OnlineStatus.OFFLINE && (status == null || status.isEmpty())) {
-                        defaultEmbed.setColor(Color.RED);
-                        defaultEmbed.addField(
-                                config.getSetupErrorFieldName(),
-                                config.getSetupErrorFieldValue(),
-                                false
-                        );
-
-                        PrivateEmbedMessages.tryPrivateMessage(null, member, defaultEmbed.build());
-
-                        RateLimitManager.instance().increase(memberIdLong);
-                    }
-                }
-
-                statusUser.setStatusSet(false);
-                UserRepository.instance().insert(statusUser);
+        } else if (statusUser.isStatusSet()) {
+            if (onlineStatus == OnlineStatus.INVISIBLE || onlineStatus == OnlineStatus.OFFLINE) {
+                statusUser.setDisabledByGoingOffline(true);
             }
+
+            if (canRateLimit && !statusUser.isDisabledByGoingOffline()) {
+                defaultEmbed.setColor(Color.RED);
+                defaultEmbed.addField(
+                        config.getSetupErrorFieldName(),
+                        config.getSetupErrorFieldValue(),
+                        false
+                );
+
+                PrivateEmbedMessages.tryPrivateMessage(null, member, defaultEmbed.build());
+                RateLimitManager.instance().increase(memberIdLong);
+            }
+
+            statusUser.setStatusSet(false);
+            UserRepository.instance().insert(statusUser);
         }
     }
 

@@ -34,11 +34,13 @@ public class StatusUserAdapter implements SQLResultAdapter<StatusUser> {
             isStatusSet = Boolean.parseBoolean(isStatusSet1);
         }
 
+        int disabledByGoingOffline = resultSet.get("disabledByGoingOffline");
         return new StatusUser(
                 resultSet.get("userId"),
                 receivedRewardsIds,
                 isStatusSet,
-                Long.parseLong(statusSetInMillis)
+                Long.parseLong(statusSetInMillis),
+                disabledByGoingOffline == 1
         );
     }
 

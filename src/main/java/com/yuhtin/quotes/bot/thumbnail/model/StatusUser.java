@@ -20,5 +20,6 @@ public class StatusUser {
 
     private boolean statusSet;
     private long statusSetInMillis;
+    private boolean disabledByGoingOffline;
 
 }

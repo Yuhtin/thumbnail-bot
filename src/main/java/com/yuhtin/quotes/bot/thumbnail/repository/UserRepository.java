@@ -13,7 +13,6 @@ import java.util.Set;
 @NoArgsConstructor
 public final class UserRepository {
 
-
     private static final UserRepository INSTANCE = new UserRepository();
     private static final String TABLE = "status_users";
 
@@ -29,7 +28,8 @@ public final class UserRepository {
                 "userId LONG NOT NULL PRIMARY KEY," +
                 "receivedRewardsIds LONGTEXT NOT NULL," +
                 "isStatusSet BOOLEAN NOT NULL DEFAULT FALSE," +
-                "statusSetInMillis LONGTEXT" +
+                "statusSetInMillis LONGTEXT," +
+                "disabledByGoingOffline BOOLEAN DEFAULT FALSE" +
                 ");"
         );
     }
@@ -64,12 +64,13 @@ public final class UserRepository {
 
     public void insert(StatusUser data) {
         this.sqlExecutor.updateQuery(
-                String.format("REPLACE INTO %s VALUES(?, ?, ?, ?)", TABLE),
+                String.format("REPLACE INTO %s VALUES(?, ?, ?, ?, ?)", TABLE),
                 statement -> {
                     statement.set(1, data.getUserId());
                     statement.set(2, String.join(",", data.getReceivedRewardsIds()));
                     statement.set(3, data.isStatusSet());
                     statement.set(4, String.valueOf(data.getStatusSetInMillis()));
+                    statement.set(5, data.isDisabledByGoingOffline());
                 }
         );
     }

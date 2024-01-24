@@ -51,6 +51,12 @@ public class ThumbnailGameGenerator {
         Thumbnail thumbnail1 = pair.getLeft();
         Thumbnail thumbnail2 = pair.getRight();
 
+        if (thumbnail1 == null || thumbnail2 == null) {
+            Logger logger = ThumbnailBot.getInstance().getLogger();
+            logger.severe("Error while selecting random thumbnails");
+            return;
+        }
+
         thumbnail1.setViews(thumbnail1.getViews() + 1);
         thumbnail2.setViews(thumbnail2.getViews() + 1);
 
