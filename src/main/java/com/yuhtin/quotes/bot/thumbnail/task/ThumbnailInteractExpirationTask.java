@@ -45,6 +45,7 @@ public class ThumbnailInteractExpirationTask extends TimerTask {
             try {
                 ImageIO.write(image, "png", os);
             } catch (IOException e) {
+                toBeRemoved.add(entry.getKey());
                 throw new RuntimeException(e);
             }
 
