@@ -2,8 +2,11 @@ package com.yuhtin.quotes.bot.thumbnail.manager;
 
 import com.google.common.collect.Lists;
 import com.yuhtin.quotes.bot.thumbnail.model.RateLimit;
+import lombok.var;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +19,19 @@ public class RateLimitManager {
 
     private static final int MAX_THRESHOLD = 4;
     private static final int CACHE_THRESHOLD_SECONDS = 120;
+
+    public void clean() {
+        List<Long> toRemove = new ArrayList<>();
+        for (var entry : RATE_LIMITS.entrySet()) {
+            if (entry.getValue().isEmpty()) {
+                toRemove.add(entry.getKey());
+            } else if (entry.getValue().get(entry.getValue().size() - 1).getTime() < System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10)) {
+                toRemove.add(entry.getKey());
+            }
+        }
+
+        toRemove.forEach(RATE_LIMITS::remove);
+    }
 
     public boolean tryUse(Long user) {
         long delay = USER_DELAY.getOrDefault(user, 0L);

@@ -5,6 +5,7 @@ import com.henryfabio.sqlprovider.executor.SQLExecutor;
 import com.yuhtin.quotes.bot.thumbnail.bot.DiscordBot;
 import com.yuhtin.quotes.bot.thumbnail.command.CommandRegistry;
 import com.yuhtin.quotes.bot.thumbnail.config.Config;
+import com.yuhtin.quotes.bot.thumbnail.manager.RateLimitManager;
 import com.yuhtin.quotes.bot.thumbnail.manager.RewardsManager;
 import com.yuhtin.quotes.bot.thumbnail.repository.ThumbnailRepository;
 import com.yuhtin.quotes.bot.thumbnail.repository.UserRepository;
@@ -17,6 +18,7 @@ import net.dv8tion.jda.api.JDA;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Date;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
@@ -66,6 +68,13 @@ public class ThumbnailBot implements DiscordBot {
 
         ThumbnailInteractExpirationTask thumbnailTask = new ThumbnailInteractExpirationTask();
         TaskHelper.runTaskTimerAsync(thumbnailTask, 500, 500, TimeUnit.MILLISECONDS);
+
+        TaskHelper.runTaskTimerAsync(new TimerTask() {
+            @Override
+            public void run() {
+                RateLimitManager.instance().clean();
+            }
+        }, 10, 10, TimeUnit.SECONDS);
     }
 
     @Override
