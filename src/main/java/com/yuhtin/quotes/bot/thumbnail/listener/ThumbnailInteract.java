@@ -67,30 +67,32 @@ public class ThumbnailInteract extends ListenerAdapter {
     }
 
     public void updateFixedMessage(TextChannel channel) {
+        Config config = ThumbnailBot.getInstance().getConfig();
+
         List<Message> rewardsMessages = channel.getHistory().retrievePast(100).complete();
         rewardsMessages.forEach(message -> {
             if (message.getAuthor().getIdLong() == channel.getJDA().getSelfUser().getIdLong()) {
-                if (message.getEmbeds().isEmpty()) {
+                if (message.getContentRaw().equalsIgnoreCase(config.getFixedMessage())) {
                     message.delete().complete();
                 }
             }
         });
 
-        Config config = ThumbnailBot.getInstance().getConfig();
         channel.sendMessage(config.getFixedMessage()).queue();
     }
 
     public void updateFixedMessage2(TextChannel channel) {
+        Config config = ThumbnailBot.getInstance().getConfig();
+
         List<Message> rewardsMessages = channel.getHistory().retrievePast(100).complete();
         rewardsMessages.forEach(message -> {
             if (message.getAuthor().getIdLong() == channel.getJDA().getSelfUser().getIdLong()) {
-                if (message.getEmbeds().isEmpty()) {
+                if (message.getContentRaw().equalsIgnoreCase(config.getFixedMessage2())) {
                     message.delete().complete();
                 }
             }
         });
 
-        Config config = ThumbnailBot.getInstance().getConfig();
         channel.sendMessage(config.getFixedMessage2()).queue();
     }
 }
