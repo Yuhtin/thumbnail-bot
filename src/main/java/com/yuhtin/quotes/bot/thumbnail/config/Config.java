@@ -21,8 +21,10 @@ public class Config {
     private String neededStatus = "I'm making fun games - www.soba.xyz";
 
     private String fixedMessage = ":pencil: Use /thumnail to vote in the best thumbnail!";
+    private String fixedMessage2 = ":pencil: Use /thumnail to vote in the best thumbnail!";
 
     private long fixedMessageChannelId = 0L;
+    private long fixedMessageChannelId2 = 0L;
 
     private String rewardsAsJson = "[{\"id\": reward_1, \"hoursWithStatus\": 2, \"rewardDesc\": \"x1 **Nothing $-$**\"}," +
             "{\"id\": reward_2, \"hoursWithStatus\": 4, \"rewardDesc\": \"x3 **Nothing $-$**\"}]";

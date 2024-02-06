@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class RateLimitManager {
 
@@ -21,6 +22,11 @@ public class RateLimitManager {
     private static final int CACHE_THRESHOLD_SECONDS = 120;
 
     public void clean() {
+        Logger logger = Logger.getLogger("ThumbnailBot");
+
+        logger.info("Cleaning rate limits...");
+        logger.info("Count: " + RATE_LIMITS.size());
+
         List<Long> toRemove = new ArrayList<>();
         for (var entry : RATE_LIMITS.entrySet()) {
             if (entry.getValue().isEmpty()) {
@@ -31,6 +37,9 @@ public class RateLimitManager {
         }
 
         toRemove.forEach(RATE_LIMITS::remove);
+
+        logger.info("Rate limits cleaned! Removed " + toRemove.size() + " rate limits.");
+        logger.info("New count: " + RATE_LIMITS.size());
     }
 
     public boolean tryUse(Long user) {
@@ -49,15 +58,18 @@ public class RateLimitManager {
 
         newRateLimits.add(new RateLimit());
 
-        if (RATE_LIMITS.containsKey(user)) RATE_LIMITS.replace(user, newRateLimits);
-        else RATE_LIMITS.put(user, newRateLimits);
-
         if (newRateLimits.size() >= MAX_THRESHOLD) {
             USER_DELAY.remove(user);
             USER_DELAY.put(user, System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
 
             newRateLimits.clear();
         }
+
+        if (!newRateLimits.isEmpty()) {
+            if (RATE_LIMITS.containsKey(user)) RATE_LIMITS.replace(user, newRateLimits);
+            else RATE_LIMITS.put(user, newRateLimits);
+        }
+
     }
 
     public static RateLimitManager instance() {

@@ -56,20 +56,41 @@ public class ThumbnailInteract extends ListenerAdapter {
         if (event.getAuthor().getIdLong() == ThumbnailBot.getInstance().getJda().getSelfUser().getIdLong()) return;
 
         Config config = ThumbnailBot.getInstance().getConfig();
-        if (event.getChannel().getIdLong() != config.getFixedMessageChannelId()) return;
+        if (event.getChannel().getIdLong() == config.getFixedMessageChannelId()) {
+            updateFixedMessage(event.getChannel().asTextChannel());
+        }
 
-        updateFixedMessage(event.getChannel().asTextChannel());
+        if (event.getChannel().getIdLong() == config.getFixedMessageChannelId2()) {
+            updateFixedMessage2(event.getChannel().asTextChannel());
+        }
+
     }
 
     public void updateFixedMessage(TextChannel channel) {
         List<Message> rewardsMessages = channel.getHistory().retrievePast(100).complete();
         rewardsMessages.forEach(message -> {
             if (message.getAuthor().getIdLong() == channel.getJDA().getSelfUser().getIdLong()) {
-                message.delete().complete();
+                if (message.getEmbeds().isEmpty()) {
+                    message.delete().complete();
+                }
             }
         });
 
         Config config = ThumbnailBot.getInstance().getConfig();
         channel.sendMessage(config.getFixedMessage()).queue();
+    }
+
+    public void updateFixedMessage2(TextChannel channel) {
+        List<Message> rewardsMessages = channel.getHistory().retrievePast(100).complete();
+        rewardsMessages.forEach(message -> {
+            if (message.getAuthor().getIdLong() == channel.getJDA().getSelfUser().getIdLong()) {
+                if (message.getEmbeds().isEmpty()) {
+                    message.delete().complete();
+                }
+            }
+        });
+
+        Config config = ThumbnailBot.getInstance().getConfig();
+        channel.sendMessage(config.getFixedMessage2()).queue();
     }
 }
