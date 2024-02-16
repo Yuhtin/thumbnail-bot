@@ -18,8 +18,8 @@ public class RateLimitManager {
     private final ConcurrentHashMap<Long, List<RateLimit>> RATE_LIMITS = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, Long> USER_DELAY = new ConcurrentHashMap<>();
 
-    private static final int MAX_THRESHOLD = 4;
-    private static final int CACHE_THRESHOLD_SECONDS = 120;
+    private static final int MAX_THRESHOLD = 2;
+    private static final int CACHE_THRESHOLD_SECONDS = 600;
 
     public void clean() {
         Logger logger = Logger.getLogger("ThumbnailBot");

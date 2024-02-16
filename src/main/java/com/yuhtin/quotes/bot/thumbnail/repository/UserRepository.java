@@ -4,8 +4,10 @@ import com.henryfabio.sqlprovider.executor.SQLExecutor;
 import com.yuhtin.quotes.bot.thumbnail.model.StatusUser;
 import com.yuhtin.quotes.bot.thumbnail.repository.adapters.StatusUserAdapter;
 import lombok.NoArgsConstructor;
+import lombok.var;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="https://github.com/Yuhtin">Yuhtin</a>

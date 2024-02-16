@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 
 import java.io.File;
+import java.util.Set;
 
 /**
  * @author <a href="https://github.com/Yuhtin">Yuhtin</a>
@@ -41,9 +42,18 @@ public final class ThumbnailRepository {
         );
     }
 
-    private Thumbnail find(String query) {
+    public Thumbnail find(String query) {
         return sqlExecutor.resultOneQuery(
                 "SELECT * FROM " + TABLE + " " + query,
+                statement -> {
+                },
+                ThumbnailAdapter.class
+        );
+    }
+
+    public Set<Thumbnail> findAll() {
+        return sqlExecutor.resultManyQuery(
+                "SELECT * FROM " + TABLE,
                 statement -> {
                 },
                 ThumbnailAdapter.class
