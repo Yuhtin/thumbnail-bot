@@ -30,8 +30,6 @@ dependencies {
     implementation("com.google.guava:guava:31.0.1-jre")
     implementation("com.google.code.gson:gson:2.8.8")
 
-    implementation("redis.clients:jedis:3.6.0")
-
     implementation("org.projectlombok:lombok:1.18.20")
     annotationProcessor("org.projectlombok:lombok:1.18.20")
 
