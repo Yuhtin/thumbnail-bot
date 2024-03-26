@@ -53,10 +53,7 @@ public class CommandRegistry {
                     }
 
                 } else throw new InstantiationException();
-            } catch (Exception exception) {
-                exception.printStackTrace();
-                logger.severe("The " + info.getName() + " class could not be instantiated");
-            }
+            } catch (Exception ignored) {}
         }
 
         commands.add(new CommandDataImpl("profile", "View profile by username")

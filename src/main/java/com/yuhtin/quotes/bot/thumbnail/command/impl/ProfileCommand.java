@@ -12,8 +12,10 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +26,6 @@ public class ProfileCommand extends ListenerAdapter {
 
     private int byteSize = 0;
     private long lastUpdate = 0;
-
 
     @SubscribeEvent
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
@@ -54,7 +55,7 @@ public class ProfileCommand extends ListenerAdapter {
     }
 
     private void searchProfile(String username, InteractionHook message) {
-        String sha256 = cache.get(username);
+        String sha256 = cache.get(username.toLowerCase());
         if (sha256 == null) {
             message.editOriginal("Your game needs a bit more visits. Go grind that!").queue();
             return;
@@ -84,14 +85,25 @@ public class ProfileCommand extends ListenerAdapter {
 
         try {
             List<ProfileRankData> profiles = data.fromJson(body);
-            cache.clear();
+            Map<String, ProfileRankData> uniqueProfiles = new HashMap<>();
 
             for (ProfileRankData profile : profiles) {
+                ProfileRankData existingProfile = uniqueProfiles.get(profile.getDisplay_name().toLowerCase());
+
+                if (existingProfile == null || profile.getRank() < existingProfile.getRank()) {
+                    uniqueProfiles.put(profile.getDisplay_name().toLowerCase(), profile);
+                }
+            }
+
+            List<ProfileRankData> filteredProfiles = new ArrayList<>(uniqueProfiles.values());
+            cache.clear();
+
+            for (ProfileRankData profile : filteredProfiles) {
                 try {
                     String transformed = transformToSha256(profile.getUser_uuid());
                     String firstLetters = transformed.substring(0, 7);
 
-                    cache.put(profile.getDisplay_name(), firstLetters);
+                    cache.put(profile.getDisplay_name().toLowerCase(), firstLetters);
                 } catch (Exception exception) {
                     exception.printStackTrace();
                 }

@@ -31,18 +31,27 @@ public class ProfileRankData {
 
                 String displayName = null;
                 String userUuid = null;
+                int rank = -1;
 
                 while (jsonReader.hasNext()) {
                     try {
                         String name = jsonReader.nextName();
 
-                        if (name.equals("display_name")) {
-                            displayName = jsonReader.nextString();
-                        } else if (name.equals("user_uuid")) {
-                            userUuid = jsonReader.nextString();
-                        } else {
-                            jsonReader.skipValue();
+                        switch (name) {
+                            case "display_name":
+                                displayName = jsonReader.nextString();
+                                break;
+                            case "user_uuid":
+                                userUuid = jsonReader.nextString();
+                                break;
+                            case "rank":
+                                rank = jsonReader.nextInt();
+                                break;
+                            default:
+                                jsonReader.skipValue();
+                                break;
                         }
+
                     } catch (Exception e) {
                         jsonReader.skipValue();
                     }
@@ -52,7 +61,7 @@ public class ProfileRankData {
 
                 if (displayName == null || userUuid == null) continue;
 
-                ProfileRankData profileRankData = new ProfileRankData(displayName, userUuid);
+                ProfileRankData profileRankData = new ProfileRankData(displayName, userUuid, rank);
                 profileRankDataList.add(profileRankData);
             }
 
@@ -64,5 +73,6 @@ public class ProfileRankData {
 
     private final String display_name;
     private final String user_uuid;
+    private final int rank;
 
 }
