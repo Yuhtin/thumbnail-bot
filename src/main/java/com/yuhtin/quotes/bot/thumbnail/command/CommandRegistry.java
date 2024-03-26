@@ -1,9 +1,14 @@
 package com.yuhtin.quotes.bot.thumbnail.command;
 
 import com.google.common.reflect.ClassPath;
+import com.yuhtin.quotes.bot.thumbnail.command.impl.ProfileCommand;
+import com.yuhtin.quotes.bot.thumbnail.config.Config;
 import lombok.Data;
 import lombok.val;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
 
 import java.io.IOException;
@@ -15,9 +20,11 @@ import java.util.logging.Logger;
 public class CommandRegistry {
 
     private final JDA client;
+    private final Config config;
 
     public void register() {
         client.addEventListener(CommandCatcher.getInstance());
+        client.addEventListener(new ProfileCommand());
 
         Logger logger = Logger.getLogger("ThumbnailBot");
         ClassPath classPath;
@@ -30,7 +37,7 @@ public class CommandRegistry {
 
         CommandMap commandMap = CommandCatcher.getInstance().getCommandMap();
 
-        List<CommandDataImpl> commands = new ArrayList<>();
+        List<SlashCommandData> commands = new ArrayList<>();
         for (val info : classPath.getTopLevelClassesRecursive("com.yuhtin.quotes.bot.thumbnail.command.impl")) {
             try {
                 Class className = Class.forName(info.getName());
@@ -52,23 +59,16 @@ public class CommandRegistry {
             }
         }
 
-        client.retrieveCommands().queue(createdCommands -> {
-            for (val command : commands) {
-                boolean exists = false;
-                for (val createdCommand : createdCommands) {
-                    if (createdCommand.getName().equals(command.getName())) {
-                        exists = true;
-                        break;
-                    }
-                }
+        commands.add(new CommandDataImpl("profile", "View profile by username")
+                .addOption(OptionType.STRING, "username", "Username to search for", true));
 
-                if (!exists) {
-                    logger.info("Adding " + command.getName() + " because is a new command.");
-                    client.upsertCommand(command).queue();
-                }
-            }
-        });
+        Guild guild = client.getGuildById(config.getSobaServerId());
+        if (guild == null) {
+            logger.severe("Guild not found");
+            return;
+        }
 
+        guild.updateCommands().addCommands(commands).queue();
         logger.info("Registered " + commandMap.getCommands().size() + " commands successfully");
     }
 

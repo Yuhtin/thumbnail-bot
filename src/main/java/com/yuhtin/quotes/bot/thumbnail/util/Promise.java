@@ -1,12 +1,14 @@
 package com.yuhtin.quotes.bot.thumbnail.util;
 
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.util.List;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class Promise<T> {
+
+
+    private static final ExecutorService executor = Executors.newFixedThreadPool(128);
 
     private final FutureTask<T> future;
 
@@ -14,24 +16,60 @@ public class Promise<T> {
         this.future = future;
     }
 
+    public static void execute(Runnable task) {
+        executor.execute(task);
+    }
+
+    public static <U> Promise<U> supply(FutureTask<U> task) {
+        return new Promise<>(task);
+    }
+
     public static <U> Promise<U> supply(Callable<U> task) {
         FutureTask<U> future = new FutureTask<>(task);
         return new Promise<>(future);
     }
 
-    public void then(Consumer<T> callback) {
-        if (future != null) {
-            new Thread(() -> {
-                try {
-                    future.run();
+    public static Promise<Void> supply(Runnable task) {
+        FutureTask<Void> future = new FutureTask<>(task, Void.TYPE.cast(null));
+        return new Promise<>(future);
+    }
 
-                    T result = future.get();
-                    callback.accept(result);
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
+    public static <T> Promise<Void> all(List<Promise<T>> promises) {
+        return supply(() -> {
+            for (Promise promise : promises) {
+                try {
+                    promise.future.get();
+                } catch (InterruptedException | ExecutionException exception) {
+                    exception.printStackTrace();
                 }
-            }).start();
+            }
+
+            return null;
+        });
+    }
+
+    public void queue(Consumer<T> callback) {
+        if (future != null) {
+            executor.submit(() -> {
+                try {
+                    callback.accept(future.get(30, TimeUnit.SECONDS));
+                } catch (InterruptedException | ExecutionException | TimeoutException exception) {
+                    exception.printStackTrace();
+                }
+            });
         }
     }
 
+    public void then(Runnable callback) {
+        if (future != null) {
+            executor.submit(() -> {
+                try {
+                    future.get(30, TimeUnit.SECONDS);
+                    callback.run();
+                } catch (InterruptedException | ExecutionException | TimeoutException exception) {
+                    exception.printStackTrace();
+                }
+            });
+        }
+    }
 }

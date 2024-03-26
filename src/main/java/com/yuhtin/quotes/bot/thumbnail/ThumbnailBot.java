@@ -59,7 +59,7 @@ public class ThumbnailBot implements DiscordBot {
         getLogger().info("Bot ready!");
         getLogger().info("Logged in as @" + jda.getSelfUser().getName());
 
-        CommandRegistry.of(jda).register();
+        CommandRegistry.of(jda, config).register();
 
         RewardsManager.instance().init();
 
@@ -68,13 +68,6 @@ public class ThumbnailBot implements DiscordBot {
 
         ThumbnailInteractExpirationTask thumbnailTask = new ThumbnailInteractExpirationTask();
         TaskHelper.runTaskTimerAsync(thumbnailTask, 500, 500, TimeUnit.MILLISECONDS);
-
-        TaskHelper.runTaskTimerAsync(new TimerTask() {
-            @Override
-            public void run() {
-                RateLimitManager.instance().clean();
-            }
-        }, 10, 10, TimeUnit.SECONDS);
     }
 
     @Override

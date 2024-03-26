@@ -1,5 +1,7 @@
 package com.yuhtin.quotes.bot.thumbnail.manager;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.yuhtin.quotes.bot.thumbnail.model.RateLimit;
 import lombok.var;
@@ -15,61 +17,27 @@ public class RateLimitManager {
 
     private static final RateLimitManager INSTANCE = new RateLimitManager();
 
-    private final ConcurrentHashMap<Long, List<RateLimit>> RATE_LIMITS = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, Long> USER_DELAY = new ConcurrentHashMap<>();
+    private final Cache<Long, Long> USER_COOLDOWN = CacheBuilder.newBuilder()
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .build();
 
-    private static final int MAX_THRESHOLD = 2;
-    private static final int CACHE_THRESHOLD_SECONDS = 600;
-
-    public void clean() {
-        Logger logger = Logger.getLogger("ThumbnailBot");
-
-        logger.info("Cleaning rate limits...");
-        logger.info("Count: " + RATE_LIMITS.size());
-
-        List<Long> toRemove = new ArrayList<>();
-        for (var entry : RATE_LIMITS.entrySet()) {
-            if (entry.getValue().isEmpty()) {
-                toRemove.add(entry.getKey());
-            } else if (entry.getValue().get(entry.getValue().size() - 1).getTime() < System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10)) {
-                toRemove.add(entry.getKey());
-            }
-        }
-
-        toRemove.forEach(RATE_LIMITS::remove);
-
-        logger.info("Rate limits cleaned! Removed " + toRemove.size() + " rate limits.");
-        logger.info("New count: " + RATE_LIMITS.size());
-    }
+    private final Cache<Long, Long> USER_DELAY = CacheBuilder.newBuilder()
+            .expireAfterWrite(30, TimeUnit.MINUTES)
+            .build();
 
     public boolean tryUse(Long user) {
-        long delay = USER_DELAY.getOrDefault(user, 0L);
-        return delay <= System.currentTimeMillis();
+        if (USER_DELAY.getIfPresent(user) != null) return false;
+        if (USER_COOLDOWN.getIfPresent(user) != null) {
+            USER_DELAY.put(user, 0L);
+            USER_COOLDOWN.invalidate(user);
+            return false;
+        }
+
+        return true;
     }
 
     public void increase(Long user) {
-        List<RateLimit> oldRateLimits = RATE_LIMITS.getOrDefault(user, Lists.newArrayList());
-        List<RateLimit> newRateLimits = Lists.newArrayList();
-        for (RateLimit rateLimit : oldRateLimits) {
-            if (rateLimit.getTime() + TimeUnit.SECONDS.toMillis(CACHE_THRESHOLD_SECONDS) > System.currentTimeMillis()) {
-                newRateLimits.add(rateLimit);
-            }
-        }
-
-        newRateLimits.add(new RateLimit());
-
-        if (newRateLimits.size() >= MAX_THRESHOLD) {
-            USER_DELAY.remove(user);
-            USER_DELAY.put(user, System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
-
-            newRateLimits.clear();
-        }
-
-        if (!newRateLimits.isEmpty()) {
-            if (RATE_LIMITS.containsKey(user)) RATE_LIMITS.replace(user, newRateLimits);
-            else RATE_LIMITS.put(user, newRateLimits);
-        }
-
+        USER_COOLDOWN.put(user, 0L);
     }
 
     public static RateLimitManager instance() {

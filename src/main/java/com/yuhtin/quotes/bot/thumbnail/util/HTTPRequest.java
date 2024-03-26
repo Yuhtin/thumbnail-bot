@@ -19,14 +19,6 @@ public class HTTPRequest {
 
     @Getter private String response;
 
-    public static HTTPRequest to(String url, String webToken) {
-        return new HTTPRequest(url, webToken, null);
-    }
-
-    public static HTTPRequest to(String url, String webToken, String body) {
-        return new HTTPRequest(url, webToken, body);
-    }
-
     public HTTPRequest send() {
         StringBuilder responseContent = new StringBuilder();
 

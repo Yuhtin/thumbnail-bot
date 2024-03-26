@@ -27,7 +27,10 @@ public class ThumbnailInteractExpirationTask extends TimerTask {
         for (val entry : ThumbnailGameGenerator.getInteractionMap().entrySet()) {
             Game game = entry.getValue();
             if (game.getInitialTime() + TimeUnit.SECONDS.toMillis(30) > System.currentTimeMillis()) continue;
-            if (game.getHook().isExpired()) continue;
+            if (game.getHook().isExpired()) {
+                toBeRemoved.add(entry.getKey());
+                continue;
+            }
 
             EmbedBuilder embedBuilder = game.getEmbedBuilder();
             embedBuilder.setTitle("This battle already ended!");
