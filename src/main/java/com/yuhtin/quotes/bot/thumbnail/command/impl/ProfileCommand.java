@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class ProfileCommand extends ListenerAdapter {
 
@@ -57,7 +58,7 @@ public class ProfileCommand extends ListenerAdapter {
     private void searchProfile(String username, InteractionHook message) {
         String sha256 = cache.get(username.toLowerCase());
         if (sha256 == null) {
-            message.editOriginal("Your game needs a bit more visits. Go grind that!").queue();
+            message.editOriginal("The games from this username need a few more visits. Keep working on it!").queue();
             return;
         }
 
@@ -91,6 +92,12 @@ public class ProfileCommand extends ListenerAdapter {
                 ProfileRankData existingProfile = uniqueProfiles.get(profile.getDisplay_name().toLowerCase());
 
                 if (existingProfile == null || profile.getRank() < existingProfile.getRank()) {
+                    if (existingProfile != null) {
+                        Logger logger = Logger.getLogger("ThumbnailBot");
+                        logger.info("Replacing " + existingProfile.getDisplay_name() + " with " + profile.getDisplay_name() + " because of rank!");
+                        logger.info("Old rank: " + existingProfile.getRank() + " New rank: " + profile.getRank());
+                    }
+
                     uniqueProfiles.put(profile.getDisplay_name().toLowerCase(), profile);
                 }
             }
